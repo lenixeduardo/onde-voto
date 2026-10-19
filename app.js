@@ -102,16 +102,18 @@ function changedCities(data,uf){
  }
  return [...found.values()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
 }
-function showCityOptions(data,uf){
- const available=changedCities(data,uf),current=city.value;
- const placeholder=available.length?'Selecione uma cidade':'Nenhuma cidade com alteração documentada';
+function showCityOptions(data,uf,preliminary){
+ const confirmed=changedCities(data,uf);
+ const available=[...new Set([...confirmed,...((preliminary?.estados?.[uf]||[]).map(r=>r.cidade))])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const current=city.value;
+ const placeholder=available.length?'Selecione uma cidade':'Nenhuma cidade identificada no levantamento';
  city.replaceChildren(new Option(placeholder,''));
- for(const name of available)city.add(new Option(name,name));
+ for(const name of available)city.add(new Option(name+(confirmed.includes(name)?' · Confirmada pelo TRE':' · Levantamento preliminar'),name));
  const previous=available.find(name=>normalize(name)===normalize(current));
  city.value=previous||'';
  city.disabled=available.length===0;
  qs('cidade-aviso').textContent=available.length
-  ?`${available.length} município(s) com mudança registrada nesta base parcial. Apenas estes municípios podem ser selecionados.`
+  ?`${available.length} município(s) com mudança reportada ou confirmada. Registros do levantamento secundário não comprovam alteração individual: confira no TSE.`
   :'Nenhuma cidade deste estado tem mudança detalhada registrada nesta base. Isso não significa que não houve alterações. Consulte o TSE ou e-Título.';
 }
 async function updateCities(){
@@ -121,8 +123,10 @@ async function updateCities(){
  qs('cidade-aviso').textContent='Carregando municípios com mudanças documentadas…';
  try{
   const data=await loadBase();
+  let preliminary=null;
+  try{const r=await fetch('/data/municipios-levantamento-2026.json',{cache:'no-store'});if(r.ok)preliminary=await r.json();}catch(_){}
   if(sel.value!==uf)return;
-  showCityOptions(data,uf);
+  showCityOptions(data,uf,preliminary);
  }catch(err){
   if(sel.value!==uf)return;
   city.replaceChildren(new Option('Lista de cidades indisponível',''));
