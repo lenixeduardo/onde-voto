@@ -80,100 +80,127 @@ document.addEventListener('DOMContentLoaded',()=>{
  const uf=document.getElementById('estado'),city=document.getElementById('cidade'),zone=document.getElementById('zona');
  const assist=document.getElementById('zona-assist'),grid=document.getElementById('zona-opcoes');
  const notice=document.getElementById('zona-aviso'),counter=document.getElementById('zonas-contagem');
- const form=document.getElementById('consulta');
+ const heading=document.getElementById('zonas-titulo'),form=document.getElementById('consulta');
  const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
  let basePromise=null,seq=0,debounce=null,zoneStatus=new Map();
  const getBase=()=>basePromise||(basePromise=fetch('/data/alteracoes-2026.json',{cache:'no-store'}).then(r=>{
   if(!r.ok)throw Error('Base indisponível');return r.json();
  }).catch(e=>{basePromise=null;throw e;}));
+ const selectedOption=()=>grid.querySelectorAll('.zone-option');
  function applySelection(){
-  const current=Number(zone.value);
-  grid.querySelectorAll('.zone-option').forEach(btn=>btn.setAttribute('aria-pressed',String(Number(btn.dataset.zona)===current)));
+  const current=Number(zone.value),municipio=norm(city.value);
+  selectedOption().forEach(btn=>{
+   btn.setAttribute('aria-pressed',String(Number(btn.dataset.zona)===current&&(!btn.dataset.cidade||norm(btn.dataset.cidade)===municipio)));
+  });
   zone.classList.toggle('zona--mudanca',zoneStatus.get(current)==='confirmed');
  }
  async function refresh(){
-  const token=++seq,municipio=city.value.trim(),state=uf.value;
-  if(!municipio){assist.hidden=true;grid.replaceChildren();zoneStatus=new Map();return;}
+  const token=++seq,municipio=city.value.trim(),state=uf.value,onlyState=!municipio;
   assist.hidden=false;grid.replaceChildren();counter.textContent='';
-  notice.textContent='Carregando zonas e verificando registros de alterações…';
+  heading.textContent=onlyState?'Zonas com mudanças documentadas no estado':'Escolha sua zona eleitoral';
+  notice.textContent='Carregando registros de alterações…';
   try{
    const base=await getBase();
    if(token!==seq)return;
-   const documented=(base.registros||[]).filter(r=>r.uf===state&&norm(r.cidade)===norm(municipio)&&Array.isArray(r.secoes)&&r.secoes.length>0);
+   const documented=(base.registros||[]).filter(r=>r.uf===state&&(!municipio||norm(r.cidade)===norm(municipio))&&Array.isArray(r.secoes)&&r.secoes.length>0);
    zoneStatus=new Map();
    for(const record of documented){
-    const number=Number(record.zona);
-    const value=record.status==='confirmado_tre'?'confirmed':'reported';
-    if(value==='confirmed'||zoneStatus.get(number)!=='confirmed')zoneStatus.set(number,value);
+    const number=Number(record.zona),status=record.status==='confirmado_tre'?'confirmed':'reported';
+    if(!onlyState&&(status==='confirmed'||zoneStatus.get(number)!=='confirmed'))zoneStatus.set(number,status);
    }
    let officialZones=[],sourceNote='';
-   if(state==='SP'&&norm(municipio)==='sao paulo'){
+   if(!onlyState&&state==='SP'&&norm(municipio)==='sao paulo'){
     try{
      const response=await fetch('/data/zonas-capital-sp-2026.json',{cache:'no-store'});
-     if(response.ok){const data=await response.json();officialZones=Array.isArray(data.zonas)?data.zonas:[];sourceNote='A relação de zonas da capital é parcial (TRE-SP).';}
-     else{sourceNote='Não foi possível carregar a relação complementar do TRE-SP.';}
-    }catch(e){sourceNote='A relação complementar de zonas está indisponível.';}
+     if(response.ok){const data=await response.json();officialZones=Array.isArray(data.zonas)?data.zonas:[];sourceNote=' A relação de zonas da capital é parcial (TRE-SP).';}
+     else{sourceNote=' A lista complementar do TRE-SP está indisponível.';}
+    }catch(e){sourceNote=' A lista complementar do TRE-SP está indisponível.';}
    }
    if(token!==seq)return;
-   const byNumber=new Map();
-   for(const z of officialZones){const n=Number(z.numero);if(Number.isInteger(n)&&n>0)byNumber.set(n,String(z.bairro||''));}
-   for(const r of documented)if(Number.isInteger(Number(r.zona)))byNumber.set(Number(r.zona),byNumber.get(Number(r.zona))||'');
-   const zones=[...byNumber.keys()].sort((a,b)=>{
-    const weight=z=>zoneStatus.get(z)==='confirmed'?0:zoneStatus.get(z)==='reported'?1:2;
-    return weight(a)-weight(b)||a-b;
-   });
-   const countChanged=zones.filter(z=>zoneStatus.get(z)==='confirmed').length;
+   const entries=new Map();
+   if(!onlyState){
+    for(const z of officialZones){
+     const n=Number(z.numero);
+     if(Number.isInteger(n)&&n>0)entries.set(String(n),{number:n,city:municipio,bairro:String(z.bairro||''),records:[]});
+    }
+   }
+   for(const r of documented){
+    const n=Number(r.zona);
+    if(!Number.isInteger(n)||n<=0)continue;
+    const key=onlyState?norm(r.cidade)+'|'+n:String(n);
+    if(!entries.has(key))entries.set(key,{number:n,city:r.cidade,bairro:'',records:[]});
+    entries.get(key).records.push(r);
+   }
+   const rank=e=>e.records.some(r=>r.status==='confirmado_tre')?0:e.records.length?1:2;
+   const zones=[...entries.values()].sort((a,b)=>rank(a)-rank(b)||a.city.localeCompare(b.city,'pt-BR')||a.number-b.number);
+   const countChanged=zones.filter(e=>rank(e)===0).length;
    const fragment=document.createDocumentFragment();
-   for(const number of zones){
-    const status=zoneStatus.get(number),button=document.createElement('button');
-    button.type='button';button.className='zone-option'+(status==='confirmed'?' zone-option--changed':status==='reported'?' zone-option--reported':'');
-    button.dataset.zona=String(number);button.setAttribute('aria-pressed',String(Number(zone.value)===number));
-    const title=document.createElement('strong');title.textContent=number+'ª Zona Eleitoral';
+   for(const entry of zones){
+    const status=rank(entry),button=document.createElement('button');
+    button.type='button';
+    button.className='zone-option'+(status===0?' zone-option--changed':status===1?' zone-option--reported':'');
+    button.dataset.zona=String(entry.number);button.dataset.cidade=entry.city;
+    button.setAttribute('aria-pressed',String(Number(zone.value)===entry.number&&norm(city.value)===norm(entry.city)));
+    const title=document.createElement('strong');title.textContent=entry.number+'ª Zona Eleitoral';
     const info=document.createElement('span');
-    if(status==='confirmed'){const records=documented.filter(r=>Number(r.zona)===number&&r.status==='confirmado_tre');const sections=new Set(records.flatMap(r=>r.secoes));info.textContent='Mudança documentada: '+sections.size+' seção(ões)';}
-    else if(status==='reported')info.textContent='Mudança relatada — conferir fonte';
-    else info.textContent=byNumber.get(number)||'Sem mudança confirmada nesta base';
+    if(status===0){
+     const confirmed=entry.records.filter(r=>r.status==='confirmado_tre');
+     const sections=new Set(confirmed.flatMap(r=>r.secoes));
+     info.textContent=(onlyState?entry.city+' · ':'')+sections.size+' seção(ões) com mudança confirmada';
+    }else if(status===1){
+     info.textContent=(onlyState?entry.city+' · ':'')+'Mudança noticiada — verificar';
+    }else{
+     info.textContent=entry.bairro||'Sem registro confirmado nesta base';
+    }
     button.append(title,info);
     button.addEventListener('click',()=>{
-     zone.value=String(number);
+     if(onlyState){
+      city.value=entry.city;
+      city.dispatchEvent(new Event('input',{bubbles:true}));
+     }
+     zone.value=String(entry.number);
      zone.dispatchEvent(new Event('input',{bubbles:true}));
-     applySelection();
+     refresh();
+     if(onlyState)form.requestSubmit();
     });
     fragment.append(button);
    }
    grid.replaceChildren(fragment);applySelection();
    counter.textContent=zones.length+' zona(s) listada(s) · '+countChanged+' com mudança confirmada';
-   if(!zones.length){
-    notice.textContent='Não há zonas cadastradas para esta cidade na base disponível. Você pode informar a zona manualmente ou verificar no TSE.';
+   if(onlyState){
+    notice.textContent=zones.length
+      ?'O fundo amarelo identifica zonas com pelo menos uma seção alterada, conforme registros desta base. Toque em uma zona para preencher município e número e consultar as seções. Nem toda a zona foi transferida.'
+      :'Não há zonas com mudança documentada para este estado na base parcial. Isso NÃO comprova ausência de mudanças. Informe sua cidade e zona ou consulte o TSE.';
+   }else if(!zones.length){
+    notice.textContent='Não há zonas cadastradas para esta cidade nesta base. Digite a zona manualmente ou consulte o TSE.';
    }else{
-    notice.textContent=(countChanged? 'O fundo amarelo indica zonas com pelo menos uma seção alterada; nem todas as seções da zona foram transferidas. ':'Nenhuma zona desta cidade tem mudança confirmada nesta base parcial. Isso NÃO comprova ausência de alterações. ')+sourceNote+' Confira sua seção no e-Título ou no TSE.';
+    notice.textContent=(countChanged
+      ?'O amarelo indica zonas com ao menos uma seção alterada. Consulte as seções específicas. '
+      :'Nenhuma zona desta cidade tem mudança confirmada nesta base parcial; isso NÃO comprova ausência de alterações. ')+sourceNote+' Confirme seu endereço no e-Título ou no TSE.';
    }
   }catch(e){
    if(token!==seq)return;
    grid.replaceChildren();counter.textContent='';
-   notice.textContent='Não foi possível carregar a lista. Você pode digitar sua zona ou consultar o TSE.';
+   notice.textContent='Não foi possível carregar os registros. Consulte o TSE ou tente novamente.';
   }
  }
- zone.addEventListener('input',()=>{
-  if(!zone.value.trim())refresh();
-  else applySelection();
- });
+ zone.addEventListener('input',()=>{applySelection();});
  city.addEventListener('input',()=>{
   zone.value='';zone.classList.remove('zona--mudanca');
-  clearTimeout(debounce);debounce=setTimeout(refresh,250);
+  clearTimeout(debounce);debounce=setTimeout(refresh,240);
  });
  uf.addEventListener('change',()=>{
   zone.value='';zone.classList.remove('zona--mudanca');
-  clearTimeout(debounce);setTimeout(refresh,0);
+  clearTimeout(debounce);refresh();
  });
  form.addEventListener('submit',event=>{
   if(!zone.value.trim()){
    event.preventDefault();event.stopImmediatePropagation();
    refresh();assist.hidden=false;
-   notice.textContent='Selecione uma zona nos cartões ou informe seu número manualmente. Só as zonas com seções alteradas documentadas recebem destaque amarelo.';
+   notice.textContent='Escolha uma zona nos cartões ou digite o número. O amarelo indica mudanças documentadas apenas em determinadas seções.';
   }
  },true);
- if(city.value.trim()&&!zone.value.trim())refresh();
+ refresh();
 });
 </script>
 </body>
