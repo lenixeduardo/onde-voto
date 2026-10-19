@@ -51,6 +51,9 @@ function renderRecord(r,sectionNumber){
  const mapsAction=link('Abrir endereço no Google Maps ↗',mapsPlaceUrl(r),'map-address-link');
  mapsAction.setAttribute('aria-label','Abrir no Google Maps o novo local de votação: '+r.novo.endereco+', '+r.cidade);
  newLocation.lastChild.append(mapsAction);
+ const routeAction=link('Traçar rota ↗',mapsDirectionsUrl(r),'map-directions-link');
+ routeAction.setAttribute('aria-label','Traçar rota até o novo local de votação no Google Maps');
+ newLocation.lastChild.append(routeAction);
  compare.append(arrow,newLocation);data.append(compare);
  const footer=node('div','sections-strip');const fi=node('img');fi.src='assets/svg/file-text.svg';fi.alt='';add(footer,fi,node('strong','',r.fonte.orgao),node('span','',`Publicado em ${r.fonte.data.split('-').reverse().join('/')}`),link('Ver fonte ↗',r.fonte.url,'source-link'));data.append(footer);
  const caution=node('p','card-caution',officialRecord?'Este registro foi confirmado no comunicado do TRE, mas pode receber atualizações. Confira seu local individualmente no TSE.':'Informação republicada pela imprensa, sem conferência independente no cadastro individual. Endereços podem estar incompletos.');data.append(caution);
@@ -102,6 +105,6 @@ sel.addEventListener('change',()=>{invalidateResults();updateCities();});
 for(const field of [city,zone,section])field.addEventListener('input',invalidateResults);
 loadBase().then(data=>{
  setSuggestions([...new Set(data.registros.filter(x=>x.uf==='RJ').map(x=>x.cidade))]);
- // Exemplo inicial com fonte TRE-RJ; outros três estados ainda aguardam registros detalhados conferidos.
- search(null,false);
+ // Resultados são mostrados apenas após uma seleção e consulta do eleitor.
+ // A lista estadual das zonas documentadas é renderizada pelo seletor da interface.
 }).catch(()=>{qs('results-description').textContent='Não foi possível carregar os dados. Tente buscar novamente.';qs('error-card').hidden=false;});
