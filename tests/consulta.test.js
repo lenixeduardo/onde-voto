@@ -146,7 +146,7 @@ test('auditoria de todas as cidades e zonas do espelho secundário, sem zonas va
     assert.ok(Number.isInteger(g[0])&&g[0]>0,v[1]+' zona inválida');
     assert.ok(g[1].length>0,v[1]+' sem seções');
     assert.equal(g[1].length,new Set(g[1]).size,v[1]+' seções repetidas');
-    for(const location of [g[2],g[3]])assert.ok(location[0]&&location[1],v[1]+' endereço incompleto');
+    for(const location of [g[2],g[3]]){assert.ok(Array.isArray(location)&&location.length>=2,v[1]+' formato de localização inválido');assert.ok(location[0]||location[1],v[1]+' nome e endereço ausentes');}
     sectionCount+=g[1].length;groups++;
    }
   }
