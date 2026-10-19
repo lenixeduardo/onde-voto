@@ -110,6 +110,21 @@ document.addEventListener('DOMContentLoaded',()=>{
     const number=Number(record.zona),status=record.status==='confirmado_tre'?'confirmed':'reported';
     if(!onlyState&&(status==='confirmed'||zoneStatus.get(number)!=='confirmed'))zoneStatus.set(number,status);
    }
+   // O levantamento secundário fornece zonas efetivamente relacionadas a seções alteradas.
+   try{
+    const response=await fetch('/data/zonas-2026-'+state.toLowerCase()+'.json',{cache:'no-store'});
+    if(response.ok){
+     const mirror=await response.json();
+     for(const v of Object.values(mirror.municipios||{})){
+      if(v[0]!==state||(municipio&&norm(v[1])!==norm(municipio)))continue;
+      for(const g of v[2]||[]){
+       const original=base.registros.some(r=>r.uf===state&&norm(r.cidade)===norm(v[1])&&Number(r.zona)===g[0]&&r.status==='confirmado_tre');
+       if(original)continue;
+       documented.push({uf:state,cidade:v[1],zona:g[0],secoes:g[1],status:'espelho_secundario'});
+      }
+     }
+    }
+   }catch(e){console.warn('Não foi possível carregar o espelho de zonas para',state);}
    let officialZones=[],sourceNote='';
    if(!onlyState&&state==='SP'&&norm(municipio)==='sao paulo'){
     try{
@@ -150,7 +165,7 @@ document.addEventListener('DOMContentLoaded',()=>{
      const sections=new Set(confirmed.flatMap(r=>r.secoes));
      info.textContent=(onlyState?entry.city+' · ':'')+sections.size+' seção(ões) com mudança confirmada';
     }else if(status===1){
-     info.textContent=(onlyState?entry.city+' · ':'')+'Mudança noticiada — verificar';
+     info.textContent=(onlyState?entry.city+' · ':'')+'Seções alteradas em levantamento secundário';
     }else{
      info.textContent=entry.bairro||'Sem registro confirmado nesta base';
     }
@@ -169,7 +184,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     fragment.append(button);
    }
    grid.replaceChildren(fragment);applySelection();
-   counter.textContent=zones.length+' zona(s) listada(s) · '+countChanged+' com mudança confirmada';
+   counter.textContent=zones.length+' zona(s) listada(s) · '+countChanged+' com confirmação primária'+(zones.some(e=>rank(e)===1)?' · demais em espelho secundário':'');
    if(onlyState){
     notice.textContent=zones.length
       ?'O fundo amarelo identifica zonas com pelo menos uma seção alterada, conforme registros desta base. Toque em uma zona para preencher município e número e consultar as seções. Nem toda a zona foi transferida.'
