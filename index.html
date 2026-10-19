@@ -90,13 +90,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   selectedOption().forEach(btn=>{
    btn.setAttribute('aria-pressed',String(Number(btn.dataset.zona)===current&&(!btn.dataset.cidade||norm(btn.dataset.cidade)===municipio)));
   });
-  zone.classList.toggle('zona--mudanca',zoneStatus.get(current)==='confirmed');
+  zone.classList.toggle('zona--mudanca',(zoneStatus.get(current)==='confirmed'||zoneStatus.get(current)==='reported'));
  }
  async function refresh(){
   const token=++seq,municipio=city.value.trim(),state=uf.value,onlyState=!municipio;
   assist.hidden=false;grid.replaceChildren();counter.textContent='';
-  heading.textContent=onlyState?'Zonas com mudanças documentadas no estado':'Escolha sua zona eleitoral';
-  notice.textContent='Carregando registros de alterações…';
+  heading.textContent=onlyState?'Zonas com registros neste estado':'Zonas eleitorais';
+  notice.textContent='Carregando zonas…';
   try{
    const base=await getBase();
    if(token!==seq)return;
@@ -121,13 +121,13 @@ document.addEventListener('DOMContentLoaded',()=>{
      }
     }
    }catch(e){console.warn('Não foi possível carregar o espelho de zonas para',state);}
-   let officialZones=[],sourceNote='';
+   let officialZones=[];
    if(!onlyState&&state==='SP'&&norm(municipio)==='sao paulo'){
     try{
      const response=await fetch('/data/zonas-capital-sp-2026.json',{cache:'no-store'});
-     if(response.ok){const data=await response.json();officialZones=Array.isArray(data.zonas)?data.zonas:[];sourceNote=' A relação de zonas da capital é parcial (TRE-SP).';}
-     else{sourceNote=' A lista complementar do TRE-SP está indisponível.';}
-    }catch(e){sourceNote=' A lista complementar do TRE-SP está indisponível.';}
+     if(response.ok){const data=await response.json();officialZones=Array.isArray(data.zonas)?data.zonas:[];}
+
+    }catch(e){/* A lista de zonas conhecidas permanece disponível. */}
    }
    if(token!==seq)return;
    const entries=new Map();
@@ -135,6 +135,12 @@ document.addEventListener('DOMContentLoaded',()=>{
     for(const z of officialZones){
      const n=Number(z.numero);
      if(Number.isInteger(n)&&n>0)entries.set(String(n),{number:n,city:municipio,bairro:String(z.bairro||''),records:[]});
+    }
+   }
+   if(!onlyState){
+    for(const record of documented){
+     const n=Number(record.zona),status=record.status==='confirmado_tre'?'confirmed':'reported';
+     if(status==='confirmed'||zoneStatus.get(n)!=='confirmed')zoneStatus.set(n,status);
     }
    }
    for(const r of documented){
@@ -146,7 +152,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    }
    const rank=e=>e.records.some(r=>r.status==='confirmado_tre')?0:e.records.length?1:2;
    const zones=[...entries.values()].sort((a,b)=>rank(a)-rank(b)||a.city.localeCompare(b.city,'pt-BR')||a.number-b.number);
-   const countChanged=zones.filter(e=>rank(e)===0).length;
+   const zonesWithRecords=zones.filter(e=>rank(e)<2).length;
    const fragment=document.createDocumentFragment();
    for(const entry of zones){
     const status=rank(entry),button=document.createElement('button');
@@ -156,16 +162,15 @@ document.addEventListener('DOMContentLoaded',()=>{
     button.setAttribute('aria-pressed',String(Number(zone.value)===entry.number&&norm(city.value)===norm(entry.city)));
     const title=document.createElement('strong');title.textContent=entry.number+'ª Zona Eleitoral';
     const info=document.createElement('span');
-    if(status===0){
-     const confirmed=entry.records.filter(r=>r.status==='confirmado_tre');
-     const sections=new Set(confirmed.flatMap(r=>r.secoes));
-     info.textContent=(onlyState?entry.city+' · ':'')+sections.size+' seção(ões) com mudança confirmada';
-    }else if(status===1){
-     info.textContent=(onlyState?entry.city+' · ':'')+'Seções alteradas em levantamento secundário';
+    if(status<2){
+     const sections=new Set(entry.records.flatMap(r=>r.secoes));
+     info.textContent=(onlyState?entry.city+' · ':'')+sections.size+' '+(sections.size===1?'seção':'seções');
     }else{
-     info.textContent=entry.bairro||'Sem registro confirmado nesta base';
+     info.textContent=entry.bairro;
     }
-    button.append(title,info);
+    button.append(title);
+    if(info.textContent)button.append(info);
+    button.setAttribute('aria-label',title.textContent+(info.textContent?' — '+info.textContent:'')+(status===0?' — fonte TRE':status===1?' — dados compilados, confirmar no TSE':''));
     button.addEventListener('click',()=>{
      if(onlyState){
       if(!Array.from(city.options).some(option=>option.value===entry.city))city.add(new Option(entry.city,entry.city));
@@ -180,22 +185,19 @@ document.addEventListener('DOMContentLoaded',()=>{
     fragment.append(button);
    }
    grid.replaceChildren(fragment);applySelection();
-   counter.textContent=zones.length+' zona(s) listada(s) · '+countChanged+' com confirmação primária'+(zones.some(e=>rank(e)===1)?' · demais em espelho secundário':'');
-   if(onlyState){
-    notice.textContent=zones.length
-      ?'O fundo amarelo identifica zonas com pelo menos uma seção alterada, conforme registros desta base. Toque em uma zona para preencher município e número e consultar as seções. Nem toda a zona foi transferida.'
-      :'Não há zonas com mudança documentada para este estado nesta base parcial. Isso NÃO comprova ausência de alterações. Consulte o TSE.';
-   }else if(!zones.length){
-    notice.textContent='Não há zonas cadastradas para esta cidade nesta base. Digite a zona manualmente ou consulte o TSE.';
+   const otherZones=zones.length-zonesWithRecords;
+   counter.textContent=zonesWithRecords+' '+(zonesWithRecords===1?'zona':'zonas')+' na lista'+(otherZones?' · '+otherZones+' para referência':'');
+   if(!zones.length){
+    notice.textContent='Nenhuma zona encontrada nesta lista. Confira seu local no TSE.';
+   }else if(onlyState){
+    notice.textContent='Escolha uma zona para preencher a cidade e consultar os locais indicados.';
    }else{
-    notice.textContent=(countChanged
-      ?'O amarelo indica zonas com ao menos uma seção alterada. Consulte as seções específicas. '
-      :'Nenhuma zona desta cidade tem mudança confirmada nesta base parcial; isso NÃO comprova ausência de alterações. ')+sourceNote+' Confirme seu endereço no e-Título ou no TSE.';
+    notice.textContent='A mudança pode atingir apenas algumas seções. Confira a sua antes de sair para votar.';
    }
   }catch(e){
    if(token!==seq)return;
    grid.replaceChildren();counter.textContent='';
-   notice.textContent='Não foi possível carregar os registros. Consulte o TSE ou tente novamente.';
+   notice.textContent='Não foi possível carregar as zonas. Tente novamente.';
   }
  }
  zone.addEventListener('input',()=>{applySelection();});
@@ -211,7 +213,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(!zone.value.trim()){
    event.preventDefault();event.stopImmediatePropagation();
    refresh();assist.hidden=false;
-   notice.textContent='Escolha uma zona nos cartões ou digite o número. O amarelo indica mudanças documentadas apenas em determinadas seções.';
+   notice.textContent='Selecione uma zona nos cartões ou digite o número.';
   }
  },true);
  refresh();
