@@ -79,6 +79,7 @@
 .zone-option--reported span{color:#80530e}
 .zone-option--reported[aria-pressed="true"]{background:#ffe3a1;border-color:#b67708;box-shadow:0 0 0 2px #b67708 inset}
 @media(max-width:680px){.zone-assist__head strong{font-size:15px}.zone-options{max-height:256px}.zone-option{min-height:52px}.search-panel{row-gap:14px}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
@@ -172,7 +173,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     info.textContent=onlyState?entry.city:(status===2?entry.bairro:'');
     button.append(title);
     if(info.textContent)button.append(info);
-    button.setAttribute('aria-label',title.textContent+(info.textContent?' — '+info.textContent:'')+(status===0?' — fonte TRE':status===1?' — dados compilados, confirmar no TSE':''));
+    const origin=document.createElement('span');
+    origin.className='sr-only';
+    origin.textContent=status===0?' Fonte: TRE.':status===1?' Dados compilados. Confirme no TSE.':'';
+    if(origin.textContent)button.append(origin);
     button.addEventListener('click',()=>{
      if(onlyState){
       if(!Array.from(city.options).some(option=>option.value===entry.city))city.add(new Option(entry.city,entry.city));
