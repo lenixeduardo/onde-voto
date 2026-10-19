@@ -119,11 +119,12 @@ test('levantamento independente disponibiliza municípios em todos os estados se
  assert.ok(reported.estados.SP.some(r=>r.cidade==='São Paulo'));
  assert.ok(reported.estados.BA.some(r=>r.cidade==='Salvador'));
 });
-test('select mistura cidades documentadas e preliminares mas não as confunde com mudança confirmada',()=>{
+test('select mostra apenas os nomes das cidades e conserva a origem no resultado',()=>{
  const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert.match(app,/municipios-levantamento-2026\.json/);
- assert.match(app,/Levantamento preliminar/);
- assert.match(app,/Confirmada pelo TRE/);
+ assert.match(app,/for\(const name of available\)city\.add\(new Option\(name,name\)\)/);
+ assert.match(app,/Levantamento independente/);
+ assert.match(app,/Alteração confirmada pelo TRE/);
  assert.match(app,/preliminary\?\.estados/);
 });
 
@@ -164,4 +165,24 @@ test('auditoria de todas as cidades e zonas do espelho secundário, sem zonas va
  assert.equal(guarulhos[2][0][0],278);
  assert.equal(guarulhos[2][0][1].length,9);
  assert.match(guarulhos[2][0][3][0],/Colégio Canadá/);
+});
+
+test('revisão editorial: zona não repete jargão do levantamento ou contadores técnicos',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ assert.doesNotMatch(html,/Seções alteradas em levantamento secundário/i);
+ assert.doesNotMatch(html,/zona\\(s\\) listada\\(s\\)/);
+ assert.doesNotMatch(html,/Estado monitorado|Cidade com mudança documentada/);
+ assert.doesNotMatch(html,/info-panel/);
+ assert.doesNotMatch(html,/scope-caption/);
+ assert.doesNotMatch(app,/município\\(s\\)/);
+ assert.match(html,/Cartões amarelos identificam zonas com seções na lista/);
+ assert.match(html,/Este não é um site oficial da Justiça Eleitoral/);
+ assert.match(html,/Autoatendimento Eleitoral/);
+});
+test('cartões de zonas mantêm município e número de seções e são acessíveis',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ assert.match(html,/sections\.size===1\\?'seção':'seções'/);
+ assert.match(html,/button\.setAttribute\\('aria-label'/);
+ assert.match(html,/zone-option--reported/);
 });
