@@ -61,16 +61,24 @@ document.addEventListener('DOMContentLoaded',()=>{
   try{
    if(!source){const r=await fetch('/data/alteracoes-2026.json',{cache:'no-store'});if(!r.ok)throw Error('base indisponível');source=await r.json();}
    if(seq!==run)return;
-   const zones=[...new Set((source.registros||[]).filter(r=>r.uf===uf.value&&norm(r.cidade)===norm(c)).map(r=>Number(r.zona)))].filter(z=>Number.isInteger(z)&&z>0).sort((a,b)=>a-b);
-   zones.forEach(z=>dropdown.add(new Option(z+'ª Zona Eleitoral',String(z))));
-   notice.textContent=zones.length?'Apenas zonas com mudanças documentadas nesta base parcial são exibidas. A cidade pode ter outras zonas. Confirme a relação completa no TSE.':'Não há zonas cadastradas para esta cidade nesta base parcial. Consulte sua zona no portal oficial do TSE.';
+   let zones=[...new Set((source.registros||[]).filter(r=>r.uf===uf.value&&norm(r.cidade)===norm(c)).map(r=>Number(r.zona)))].filter(z=>Number.isInteger(z)&&z>0).sort((a,b)=>a-b);
+   let officialZones=null;
+   if(uf.value==='SP'&&norm(c)==='sao paulo'){
+    const zoneResponse=await fetch('/data/zonas-capital-sp-2026.json',{cache:'no-store'});
+    if(!zoneResponse.ok)throw Error('Lista eleitoral oficial indisponível');
+    officialZones=(await zoneResponse.json()).zonas;
+    zones=[...new Set([...zones,...officialZones.map(z=>z.numero)])].sort((a,b)=>a-b);
+   }
+   if(seq!==run)return;
+   zones.forEach(z=>{const local=officialZones?.find(item=>item.numero===z);dropdown.add(new Option(z+'ª Zona Eleitoral'+(local?' — '+local.bairro:''),String(z)));});
+   notice.textContent=officialZones?'Foram carregadas '+officialZones.length+' zonas eleitorais da capital a partir de relação oficial do TRE-SP (lista parcial). A presença na lista NÃO significa mudança de local de votação.':'Esta lista mostra somente as zonas com alterações documentadas nesta base. Para consultar outras zonas, digite o número ou consulte o TSE.';
   }catch(_){notice.textContent='Lista de zonas indisponível. Consulte a Justiça Eleitoral.';}
  }
  dropdown.addEventListener('change',()=>{if(dropdown.value){zone.value=dropdown.value;zone.dispatchEvent(new Event('input',{bubbles:true}));}else{zone.value='';}refresh();});
  zone.addEventListener('input',()=>{if(zone.value.trim())assist.hidden=true;else refresh();});
  city.addEventListener('input',()=>{clearTimeout(window.__ondeVotoRefresh);window.__ondeVotoRefresh=setTimeout(refresh,300)});
  uf.addEventListener('change',()=>{zone.value='';dropdown.value='';setTimeout(refresh,0)});
- form.addEventListener('submit',e=>{if(!zone.value.trim()){e.preventDefault();e.stopImmediatePropagation();refresh();assist.hidden=false;notice.textContent='Escolha uma zona da lista ou informe o número manualmente. A listagem parcial não garante todas as zonas do município.';}},true);
+ form.addEventListener('submit',e=>{if(!zone.value.trim()){e.preventDefault();e.stopImmediatePropagation();refresh();assist.hidden=false;notice.textContent='Escolha uma zona da lista ou informe o número manualmente. A lista de zonas pode estar incompleta e não indica, por si só, mudança do local de votação.';}},true);
  btn.addEventListener('click',()=>{if(!zone.value.trim())refresh();});
 });
 </script>
