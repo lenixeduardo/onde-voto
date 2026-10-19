@@ -128,3 +128,24 @@
  .location .address-link{font-size:14px;min-height:42px}
  .location .map-directions-link{font-size:13px}
 }
+
+
+/* Rodapé informativo: transparência sem interromper a consulta. */
+.site-footer{
+ border-top:1px solid #e0eaf4;
+ background:#f7faff;
+ color:#4b6480;
+ padding:20px 0 24px;
+}
+.site-footer__inner{display:flex;flex-direction:column;gap:11px;min-width:0}
+.site-footer__disclaimer{font-size:12px;line-height:1.6;max-width:940px;overflow-wrap:break-word}
+.site-footer__disclaimer strong{color:#203f63;font-weight:700}
+.site-footer__references{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;font-size:12px;line-height:1.45}
+.site-footer__references span{color:#647f9c}
+.site-footer__references a{color:#205ab4;font-weight:600;text-underline-offset:3px}
+@media(max-width:680px){
+ .site-footer{padding:17px 0 26px}
+ .site-footer__inner{gap:12px}
+ .site-footer__disclaimer{font-size:12px;line-height:1.6}
+ .site-footer__references{align-items:flex-start;gap:8px 15px}
+}
