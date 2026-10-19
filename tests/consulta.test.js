@@ -180,7 +180,19 @@ test('revisão editorial e cartões acessíveis',()=>{
  assert.ok(html.includes('Cartões amarelos identificam zonas com seções na lista'));
  assert.ok(html.includes('Este não é um site oficial da Justiça Eleitoral'));
  assert.ok(html.includes('Consulta oficial no TSE'));
- assert.ok(html.includes("sections.size===1?'seção':'seções'"));
+ assert.ok(!html.includes("sections.size===1?'seção':'seções'"));
+ assert.ok(html.includes('info.textContent=onlyState?entry.city:'));
+ assert.ok(html.includes('button.append(title)'));
+ assert.ok(!html.includes("entry.records.flatMap(r=>r.secoes)"));
  assert.ok(html.includes("button.setAttribute('aria-label'"));
  assert.ok(html.includes('zone-option--reported'));
+});
+
+test('cartões não apresentam quantidade de seções, mas os resultados preservam a lista detalhada',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ assert.ok(!html.includes("sections.size"));
+ assert.ok(html.includes("info.textContent=onlyState?entry.city:"));
+ assert.ok(app.includes("['Seções afetadas:',r.secoes.join(', ')]"));
+ assert.ok(app.includes("sectionNumber"));
 });
