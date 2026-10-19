@@ -245,3 +245,20 @@ test('links de endereço, rota e fonte usam SVGs, sem setas unicode',()=>{
  assert.match(css,/\.location \.address-link\{/);
  assert.match(css,/\.footer-external-link::after\{/);
 });
+
+test('aviso de site independente aparece uma vez e somente no rodapé, com acesso oficial ao TSE',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
+ const warning='Este não é um site oficial da Justiça Eleitoral.';
+ assert.equal(html.split(warning).length-1,1);
+ assert.ok(!html.includes('class="independence"'));
+ assert.ok(!html.includes('class="prototype-note"'));
+ const mainEnd=html.indexOf('</main>'),footStart=html.indexOf('<footer class="site-footer"'),footEnd=html.indexOf('</footer>');
+ assert.ok(mainEnd>0&&footStart>mainEnd&&footEnd>footStart);
+ assert.ok(html.indexOf(warning)>footStart&&html.indexOf(warning)<footEnd);
+ assert.ok(html.indexOf('id="base-updated"')>footStart&&html.indexOf('id="base-updated"')<footEnd);
+ assert.match(html,/<nav class="site-footer__references" aria-label="Fontes e consulta oficial">/);
+ assert.match(html,/Consulta oficial no TSE/);
+ assert.match(html,/O Onde Voto\\? é uma iniciativa independente/);
+ assert.match(css,/\\.site-footer__disclaimer\\{/);
+});
