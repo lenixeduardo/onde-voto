@@ -19,3 +19,13 @@
 
 .scope-caption{font-size:13px;color:#4a6a8a;margin:13px 2px 2px;line-height:1.45}.scope-caption strong{color:var(--navy)}
 @media(max-width:680px){.scope-caption{font-size:12px;margin-top:10px}}
+
+/* Os mapas são prévias ilustrativas clicáveis que abrem o novo endereço no Google Maps. */
+.result-map--interactive{position:relative;display:flex;text-decoration:none;cursor:pointer;outline-offset:4px}
+.result-map--interactive:focus-visible{outline:3px solid #205ab4}
+.result-map--interactive:hover>img{filter:brightness(.94)}
+.result-map--interactive>.map-label{font-size:12px;font-weight:700;background:#fff;color:#1357ad;border-color:#afc9e8;box-shadow:0 2px 8px rgba(14,45,87,.13);pointer-events:none}
+.map-address-link,.map-directions-link{display:inline-flex;align-items:center;max-width:100%;margin-top:9px;color:#1459b5;font-size:13px;font-weight:700;line-height:1.4;text-underline-offset:2px}
+.map-address-link:focus-visible,.map-directions-link:focus-visible{outline:3px solid #205ab4;outline-offset:3px}
+.map-directions-link{margin-top:5px}
+@media(max-width:680px){.result-map--interactive>.map-label{font-size:11px}.map-address-link,.map-directions-link{font-size:12px}}
