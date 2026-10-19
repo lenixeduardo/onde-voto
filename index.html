@@ -157,7 +157,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     button.append(title,info);
     button.addEventListener('click',()=>{
      if(onlyState){
-      city.value=entry.city;
       if(!Array.from(city.options).some(option=>option.value===entry.city))city.add(new Option(entry.city,entry.city));
       city.value=entry.city;
       city.dispatchEvent(new Event('change',{bubbles:true}));
@@ -174,7 +173,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    if(onlyState){
     notice.textContent=zones.length
       ?'O fundo amarelo identifica zonas com pelo menos uma seção alterada, conforme registros desta base. Toque em uma zona para preencher município e número e consultar as seções. Nem toda a zona foi transferida.'
-      :'Não há zonas com mudança documentada para este estado na base parcial. Isso NÃO comprova ausência de mudanças. Informe sua cidade e zona ou consulte o TSE.';
+      :'Não há zonas com mudança documentada para este estado nesta base parcial. Isso NÃO comprova ausência de alterações. Consulte o TSE.';
    }else if(!zones.length){
     notice.textContent='Não há zonas cadastradas para esta cidade nesta base. Digite a zona manualmente ou consulte o TSE.';
    }else{
