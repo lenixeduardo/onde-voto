@@ -64,7 +64,7 @@ test('interface só inclui os quatro estados e valida a base estática',()=>{
  const source=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert.match(source,/const UFS=\{BA:'Bahia',MG:'Minas Gerais',RJ:'Rio de Janeiro',SP:'São Paulo'\}/);
  assert.match(source,/Base fora do escopo autorizado/);
- assert.match(source,/Nenhum registro nesta lista/);
+ assert.match(source,/Nenhum endereço nesta lista/);
  assert.doesNotMatch(source,/AL:'Alagoas'/);
 });
 test('CSV com outro estado é rejeitado antes de gerar importação revisável',()=>{
@@ -85,7 +85,7 @@ test('campo Cidade usa select, sem digitação livre ou datalist geral do IBGE',
  assert.doesNotMatch(html,/<input id="cidade"/);
  assert.doesNotMatch(html,/<datalist id="lista-cidades"/);
  assert.doesNotMatch(app,/servicodados\.ibge\.gov\.br/);
- assert.match(app,/city\.addEventListener\('change',invalidateResults\)/);
+ assert.match(app,/city\.addEventListener\('change'/);
 });
 test('lista somente municípios com seções alteradas e fonte documental por UF',()=>{
  const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
@@ -177,7 +177,7 @@ test('revisão editorial e cartões acessíveis',()=>{
  assert.ok(!html.includes('class="info-panel"'));
  assert.ok(!html.includes('class="scope-caption"'));
  assert.ok(!app.includes('município(s)'));
- assert.ok(html.includes('Cartões amarelos identificam zonas com seções na lista'));
+ assert.ok(html.includes('Selecione uma zona ou consulte todas as mudanças da cidade.'));
  assert.ok(html.includes('Este não é um site oficial da Justiça Eleitoral'));
  assert.ok(html.includes('Consulta oficial no TSE'));
  assert.ok(!html.includes("sections.size===1?'seção':'seções'"));
@@ -195,4 +195,16 @@ test('cartões não apresentam quantidade de seções, mas os resultados preserv
  assert.ok(html.includes("info.textContent=onlyState?entry.city:"));
  assert.ok(app.includes("['Seções afetadas:',r.secoes.join(', ')]"));
  assert.ok(app.includes("sectionNumber"));
+});
+
+test('consulta aceita cidade sem obrigar número de zona',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ assert.ok(!html.includes("if(!zone.value.trim())"));
+ assert.ok(app.includes('const z=rawZone?Number(rawZone):null'));
+ assert.ok(app.includes('if(!z&&!sectionNo&&records.length>3)'));
+ assert.ok(app.includes("city.addEventListener('change',()=>{invalidateResults();if(city.value)search(null,false);});"));
+ assert.ok(html.includes('form.requestSubmit();'));
+ assert.ok(html.includes('role="region"'));
+ assert.ok(html.includes('field-optional'));
 });
