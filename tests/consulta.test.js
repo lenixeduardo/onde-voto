@@ -138,7 +138,7 @@ test('auditoria de todas as cidades e zonas do espelho secundário, sem zonas va
   let sectionCount=0;
   const uniqueCities=new Set();
   for(const [ibge,v] of cities){
-   assert.match(ibge,/^\\d{7}$/);
+   assert.match(ibge,/^\d{7}$/);
    assert.equal(v[0],uf);
    assert.ok(v[1].trim());uniqueCities.add(normalized(v[1]));
    assert.ok(v[2].length>0,v[1]+' não pode ficar sem zona');
