@@ -59,7 +59,7 @@
 .zone-legend__mark--changed{background:#fff0ce;border-color:#e8a934}
 .zone-legend__mark--unverified{background:#edf3fa;border-color:#c8d6e8}
 .zone-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:9px;max-height:310px;overflow-y:auto;overscroll-behavior:contain;padding:3px 4px 5px 1px}
-.zone-option{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;min-height:72px;padding:11px 12px;border:1.5px solid #c8d6e8;border-radius:10px;background:#edf3fa;text-align:left;color:#173455;cursor:pointer;font:inherit;transition:border-color .12s,box-shadow .12s,background .12s}
+.zone-option{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;min-width:0;min-height:56px;padding:11px 12px;border:1.5px solid #c8d6e8;border-radius:10px;background:#edf3fa;text-align:left;color:#173455;cursor:pointer;font:inherit;transition:border-color .12s,box-shadow .12s,background .12s}
 .zone-option strong{font-size:15px;line-height:1.15;font-weight:700}
 .zone-option span{font-size:12px;color:#48617e;line-height:1.3}
 .zone-option--changed{background:#fff0ce;border-color:#ecb553;color:#754207}
@@ -71,7 +71,7 @@
 .zone-option--changed[aria-pressed="true"]{background:#ffe3a1;border-color:#b67708;box-shadow:0 0 0 2px #b67708 inset}
 .zone-disclaimer{color:#526b83;line-height:1.5;font-size:12px;margin:0}
 #zona.zona--mudanca{background:#fff1d2;border-color:#de9c25;color:#764300}
-@media(max-width:680px){#zona-assist{padding:13px}.zone-options{grid-template-columns:repeat(2,minmax(0,1fr));max-height:270px}.zone-option{padding:10px;min-height:74px}.zone-option strong{font-size:14px}.zone-option span{font-size:11px}}
+@media(max-width:680px){#zona-assist{padding:13px}.zone-options{grid-template-columns:repeat(2,minmax(0,1fr));max-height:270px}.zone-option{padding:10px;min-height:58px}.zone-option strong{font-size:14px}.zone-option span{font-size:11px}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
@@ -162,12 +162,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     button.setAttribute('aria-pressed',String(Number(zone.value)===entry.number&&norm(city.value)===norm(entry.city)));
     const title=document.createElement('strong');title.textContent=entry.number+'ª Zona Eleitoral';
     const info=document.createElement('span');
-    if(status<2){
-     const sections=new Set(entry.records.flatMap(r=>r.secoes));
-     info.textContent=(onlyState?entry.city+' · ':'')+sections.size+' '+(sections.size===1?'seção':'seções');
-    }else{
-     info.textContent=entry.bairro;
-    }
+    info.textContent=onlyState?entry.city:(status===2?entry.bairro:'');
     button.append(title);
     if(info.textContent)button.append(info);
     button.setAttribute('aria-label',title.textContent+(info.textContent?' — '+info.textContent:'')+(status===0?' — fonte TRE':status===1?' — dados compilados, confirmar no TSE':''));
