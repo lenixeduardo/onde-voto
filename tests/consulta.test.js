@@ -126,3 +126,42 @@ test('select mistura cidades documentadas e preliminares mas não as confunde co
  assert.match(app,/Confirmada pelo TRE/);
  assert.match(app,/preliminary\?\.estados/);
 });
+
+test('auditoria de todas as cidades e zonas do espelho secundário, sem zonas vazias',()=>{
+ const totals={SP:[34,413],MG:[67,337],RJ:[9,47],BA:[48,187]};
+ let municipalities=0,sections=0,groups=0;
+ for(const [uf,[expectedCities,expectedSections]] of Object.entries(totals)){
+  const snapshot=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/zonas-2026-'+uf.toLowerCase()+'.json'),'utf8'));
+  assert.equal(snapshot.status,'espelho_secundario');
+  const cities=Object.entries(snapshot.municipios);
+  assert.equal(cities.length,expectedCities,uf+' número de municípios');
+  let sectionCount=0;
+  const uniqueCities=new Set();
+  for(const [ibge,v] of cities){
+   assert.match(ibge,/^\\d{7}$/);
+   assert.equal(v[0],uf);
+   assert.ok(v[1].trim());uniqueCities.add(normalized(v[1]));
+   assert.ok(v[2].length>0,v[1]+' não pode ficar sem zona');
+   for(const g of v[2]){
+    assert.ok(Number.isInteger(g[0])&&g[0]>0,v[1]+' zona inválida');
+    assert.ok(g[1].length>0,v[1]+' sem seções');
+    assert.equal(g[1].length,new Set(g[1]).size,v[1]+' seções repetidas');
+    for(const location of [g[2],g[3]])assert.ok(location[0]&&location[1],v[1]+' endereço incompleto');
+    sectionCount+=g[1].length;groups++;
+   }
+  }
+  assert.equal(uniqueCities.size,expectedCities,uf+' município duplicado');
+  assert.equal(sectionCount,expectedSections,uf+' total de seções');
+  municipalities+=cities.length;sections+=sectionCount;
+ }
+ assert.equal(municipalities,158);
+ assert.equal(sections,984);
+ assert.ok(groups>=158);
+ const sp=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/zonas-2026-sp.json'),'utf8'));
+ const guarulhos=Object.values(sp.municipios).find(v=>v[1]==='Guarulhos');
+ assert.ok(guarulhos);
+ assert.equal(guarulhos[2].length,1);
+ assert.equal(guarulhos[2][0][0],278);
+ assert.equal(guarulhos[2][0][1].length,9);
+ assert.match(guarulhos[2][0][3][0],/Colégio Canadá/);
+});
