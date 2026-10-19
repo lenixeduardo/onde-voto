@@ -63,13 +63,13 @@ function renderRecord(r,sectionNumber){
  add(banner,status,node('strong','',officialRecord?'Alteração confirmada pelo TRE':'Alteração indicada na lista consultada'));
  data.append(banner);
  const meta=node('div','result-meta');
- for(const [label,v] of [['Cidade:',`${r.cidade} / ${r.uf}`],['Zona eleitoral:',`${r.zona}ª ZE`],['Seções afetadas:',r.secoes.join(', ')],['Situação:',sectionNumber?(exactSection?'Seção indicada neste registro':'Seção não indicada'):'Afeta apenas as seções indicadas']]){
+ for(const [label,v] of [['Cidade:',`${r.cidade} / ${r.uf}`],['Zona eleitoral:',`${r.zona}ª ZE`],['Seções afetadas:',r.secoes.join(', ')],['Consulta:',sectionNumber?(exactSection?'Seção identificada':'Confira sua seção'):'Verifique sua seção antes de ir']]){
  const div=node('div');add(div,node('span','',label),node('strong','',v));meta.append(div);
  }
  data.append(meta);
  const compare=node('div','location-compare');compare.append(locationCard('Local anterior',r.anterior,false));const arrow=node('img','compare-arrow');arrow.src='assets/svg/arrow-right.svg';arrow.alt='Transferido para';
  const newLocation=locationCard('Novo local',r.novo,true);
- if(r.novo.endereco&&r.novo.endereco.trim()){
+ if(r.novo.endereco&&r.novo.endereco.trim()&&/(rua|avenida|av\.|estrada|rodovia|praça|travessa|alameda|largo|r\.|quadra|bairro|povoado|sítio|sitio|fazenda|km\b)/i.test(r.novo.endereco)){
   const mapsAction=link('Abrir endereço no Google Maps ↗',mapsPlaceUrl(r),'map-address-link');
   mapsAction.setAttribute('aria-label','Abrir no Google Maps o novo local de votação: '+r.novo.endereco+', '+r.cidade);
   newLocation.lastChild.append(mapsAction);
@@ -82,7 +82,7 @@ function renderRecord(r,sectionNumber){
  compare.append(arrow,newLocation);data.append(compare);
  const footer=node('div','sections-strip');const fi=node('img');fi.src='assets/svg/file-text.svg';fi.alt='';add(footer,fi,node('strong','',officialRecord?r.fonte.orgao:'Levantamento independente'),node('span','',r.fonte.data.split('-').reverse().join('/')),link('Ver origem ↗',r.fonte.url,'source-link'));data.append(footer);
  card.append(data);
- if(r.uf==='RJ'&&r.zona===188){
+ if(r.uf==='RJ'&&r.zona===188&&r.novo.endereco){
   const map=link('',''+mapsPlaceUrl(r),'result-map result-map--interactive');
   map.setAttribute('aria-label','Abrir no Google Maps o novo endereço: '+r.novo.endereco+', '+r.cidade);
   const img=node('img');img.src='assets/mapa-exemplo-rio.webp';img.alt='Prévia ilustrativa do trajeto entre os locais; toque para abrir o endereço atualizado no Google Maps';
@@ -92,36 +92,73 @@ function renderRecord(r,sectionNumber){
  return card;
 }
 function emptyResult(title,text){qs('empty-title').textContent=title;qs('empty-text').textContent=text;qs('empty-card').hidden=false;}
-async function search(ev,shouldScroll=true){if(ev)ev.preventDefault();const uf=sel.value,c=city.value.trim(),z=Number(zone.value),s=section.value.trim();
- if(!permittedUFs.has(uf)){qs('results-container').hidden=true;emptyResult('Estado fora do escopo','Esta página consulta exclusivamente São Paulo, Minas Gerais, Rio de Janeiro e Bahia.');return;}
- if(!uf||!c||!Number.isInteger(z)||z<1||z>999||(s&&(!/^\d{1,4}$/.test(s)||Number(s)<1))){qs('results-container').hidden=true;emptyResult('Confira os campos','Selecione uma cidade e uma zona eleitoral válida.');return;}
- const button=qs('buscar');button.disabled=true;button.querySelector('span').textContent='Consultando…';qs('loading').hidden=false;qs('empty-card').hidden=true;qs('error-card').hidden=true;qs('results-container').hidden=true;
+let searchSequence=0;
+async function search(ev,shouldScroll=true){
+ if(ev)ev.preventDefault();
+ const id=++searchSequence,uf=sel.value,c=city.value.trim(),rawZone=zone.value.trim(),rawSection=section.value.trim();
+ const z=rawZone?Number(rawZone):null,sectionNo=rawSection?Number(rawSection):null;
+ if(!permittedUFs.has(uf))return;
+ if(!c){
+  qs('results-container').hidden=true;qs('empty-card').hidden=true;qs('error-card').hidden=true;
+  qs('results-description').textContent='Selecione uma cidade ou uma zona destacada para continuar.';
+  return;
+ }
+ if((rawZone&&(!/^\d{1,3}$/.test(rawZone)||z<1))||(rawSection&&(!/^\d{1,4}$/.test(rawSection)||sectionNo<1))){
+  emptyResult('Confira os números informados','Digite uma zona ou seção eleitoral válida.');
+  return;
+ }
+ const button=qs('buscar'),container=qs('results-container');
+ button.disabled=true;button.querySelector('span').textContent='Buscando…';
+ qs('loading').hidden=false;qs('empty-card').hidden=true;qs('error-card').hidden=true;container.hidden=true;
  try{
-  const b=await loadBase();let result;
-  try{const path=`/api/consulta?uf=${encodeURIComponent(uf)}&cidade=${encodeURIComponent(c)}&zona=${z}${s?`&secao=${encodeURIComponent(s)}`:''}`;const response=await fetch(path,{cache:'no-store'});if(!response.ok)throw new Error('fallback estático');const j=await response.json();if(!j||!Array.isArray(j.registros))throw new Error('Resposta inválida');result=j;}
-  catch(e){const {matching,precise}=searchableRecords(b,uf,c,z,s?Number(s):null);result={registros:precise,totalZona:matching.length,cobertura:'parcial'};}
-  // Complemento secundário: municípios, zonas e seções individualizados. Não substituir fonte oficial.
-  try{
-   const mirror=await loadMirror(uf);
-   const candidates=mirrorRecords(mirror,uf,c,z);
-   const allIds=new Set(result.registros.flatMap(r=>r.secoes.map(sec=>r.zona+'-'+sec)));
-   const additional=candidates.filter(record=>record.secoes.some(sec=>!allIds.has(record.zona+'-'+sec)));
-   if(additional.length){
-    const precise=s?additional.filter(record=>record.secoes.includes(Number(s))):additional;
-    result.registros.push(...precise);result.totalZona+=additional.length;
+  const [base,mirror]=await Promise.all([
+   loadBase(),
+   loadMirror(uf).catch(err=>{console.warn('Base complementar indisponível:',err.message);return null;})
+  ]);
+  if(id!==searchSequence)return;
+  const officialRecords=base.registros.filter(r=>r.uf===uf&&normalize(r.cidade)===normalize(c)&&(!z||Number(r.zona)===z));
+  const matchedOfficial=sectionNo?officialRecords.filter(r=>r.secoes.includes(sectionNo)):officialRecords;
+  const verifiedSections=new Set(officialRecords.flatMap(r=>r.secoes.map(sec=>r.zona+':'+sec)));
+  const additional=mirror?mirrorRecords(mirror,uf,c,z).filter(record=>record.secoes.some(sec=>!verifiedSections.has(record.zona+':'+sec))):[];
+  const matchingExtra=sectionNo?additional.filter(record=>record.secoes.includes(sectionNo)):additional;
+  const records=[...matchedOfficial,...matchingExtra].sort((a,b)=>a.zona-b.zona||a.novo.nome.localeCompare(b.novo.nome,'pt-BR'));
+  container.replaceChildren();
+  if(records.length){
+   if(!z&&!sectionNo&&records.length>3){
+    for(const r of records){
+     const disclosure=node('details','result-disclosure');
+     const summary=node('summary','result-disclosure__summary');
+     const name=node('strong','',r.zona+'ª Zona Eleitoral');
+     const change=node('span','',r.anterior.nome+' → '+r.novo.nome);
+     summary.append(name,change);disclosure.append(summary,renderRecord(r,null));container.append(disclosure);
+    }
+   }else{
+    for(const r of records)container.append(renderRecord(r,sectionNo));
    }
-  }catch(error){console.warn('Espelho secundário indisponível:',error.message);}
-  const container=qs('results-container');container.replaceChildren();
-  if(result.registros.length){
-   for(const r of result.registros)container.append(renderRecord(r,s?Number(s):null));container.hidden=false;
-   qs('results-description').textContent=`${result.registros.length} ${result.registros.length===1?'mudança listada':'mudanças listadas'} em ${c} · Zona ${z}. Confirme sua seção no TSE.`;
-  }else if(s && result.totalZona>0){emptyResult('Seção não encontrada',`Não há registro para a seção ${Number(s)} da zona ${z} nesta lista. Isso não confirma que o endereço continua igual. Confira no TSE.`);}
-  else{emptyResult('Nenhum registro nesta lista',`Não encontramos dados para a zona ${z} de ${c}. A lista pode estar incompleta; confirme seu local no TSE ou no e-Título.`);}
+   container.hidden=false;
+   qs('results-description').textContent=records.length+' '+(records.length===1?'alteração encontrada':'alterações encontradas')+' em '+c+(z?' · Zona '+z:'')+'. Selecione sua seção e confirme no TSE.';
+  }else if(sectionNo&&officialRecords.length+additional.length){
+   emptyResult('Seção não identificada','A seção '+sectionNo+' não consta nos registros encontrados. Confirme seu endereço no TSE.');
+  }else{
+   emptyResult('Nenhum endereço nesta lista','Não há registro para os filtros selecionados. Isso não significa que seu local permaneceu igual. Confirme no TSE.');
+  }
   if(shouldScroll)scrollResult();
- }catch(e){console.error('Falha ao obter base:',e.message);qs('error-card').hidden=false;}
- finally{qs('loading').hidden=true;button.disabled=false;button.querySelector('span').textContent='Buscar alteração';}
+ }catch(e){
+  if(id!==searchSequence)return;
+  console.error('Falha na consulta:',e);
+  qs('error-card').hidden=false;
+ }finally{
+  if(id===searchSequence){
+   qs('loading').hidden=true;button.disabled=false;button.querySelector('span').textContent='Buscar alteração';
+  }
+ }
 }
+
 function invalidateResults(){
+ searchSequence++;
+ qs('loading').hidden=true;
+ qs('buscar').disabled=false;
+ qs('buscar').querySelector('span').textContent='Buscar alteração';
  qs('results-container').hidden=true;
  qs('empty-card').hidden=true;
  qs('error-card').hidden=true;
@@ -171,7 +208,7 @@ async function updateCities(){
 }
 qs('consulta').addEventListener('submit',search);
 sel.addEventListener('change',()=>{invalidateResults();updateCities();});
-city.addEventListener('change',invalidateResults);
+city.addEventListener('change',()=>{invalidateResults();if(city.value)search(null,false);});
 for(const field of [zone,section])field.addEventListener('input',invalidateResults);
 // O campo cidade nunca recebe municípios de um autocomplete geral, apenas da base de alterações.
 updateCities();
