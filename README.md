@@ -1,4 +1,4 @@
-# Onde Voto? — versão 1.1.0 | Escopo em quatro estados
+# Onde Voto? — versão 1.2.0 | Consulta por cidade e zona opcional
 
 Esta landing page **independente** procura publicações documentadas sobre mudanças de locais de votação no segundo turno das Eleições 2026. Não é um serviço oficial, não usa CPF e **não consulta o cadastro individual do TSE em tempo real**.
 
@@ -8,13 +8,31 @@ A pesquisa ficou **restrita a SP (São Paulo), MG (Minas Gerais), RJ (Rio de Jan
 
 **Estado monitorado não significa que todas as suas cidades ou zonas eleitorais mudaram.** A disponibilidade de um estado no formulário indica somente que ele pertence ao escopo de pesquisa.
 
-## Cobertura real desta versão
+## Cobertura e funcionamento
 
-- **RJ:** cinco seções eleitorais (123–127), 188ª Zona Eleitoral no Rio de Janeiro, com alteração entre Brás de Pina e Penha Circular descrita em comunicado do TRE-RJ de 17/10/2026; inclui endereço anterior, novo endereço e link da fonte.
-- **SP, MG e BA:** habilitados para pesquisa, mas **sem registros de endereço/zonas verificadas por fonte primária importados** nesta versão. A interface informa "Alteração não verificada nesta base" e recomenda consulta individual oficial. Isso **não** equivale a afirmar que não houve alterações nesses estados.
-- **AL e demais UFs:** removidos da base ativa e bloqueados na interface, API e importação.
+A interface permite selecionar um estado e uma cidade, **sem exigir zona ou seção**. Ao selecionar uma cidade, a página consulta automaticamente os registros. Zonas conhecidas aparecem em cartões clicáveis e filtram o resultado; a seção pode ser informada em um filtro avançado. Cidades com muitos registros mostram detalhes recolhíveis para facilitar a navegação.
 
-A consulta por cidade e zona eleitoral retorna registros documentados; por seção, quando informada, filtra dentro das seções listadas. Nenhum resultado significa apenas **não identificado nesta base parcial**, nunca "sem alteração".
+- **São Paulo:** 34 municípios e 413 seções no espelho secundário.
+- **Minas Gerais:** 67 municípios e 337 seções no espelho secundário.
+- **Rio de Janeiro:** 9 municípios e 47 seções no espelho secundário, além de um comunicado direto do TRE-RJ para a 188ª zona do município do Rio de Janeiro.
+- **Bahia:** 48 municípios e 187 seções no espelho secundário.
+
+Os dados secundários estão armazenados em `data/zonas-2026-{sp,mg,rj,ba}.json`, reproduzidos do levantamento publicado em https://dapravirar.org/mudou-o-local e atribuído aos dados do TSE de 17/10/2026. **Não foram homologados individualmente junto aos TREs.** A origem e a data são exibidas no resultado. Os endereços incompletos recebem aviso e não geram link de navegação.
+
+A base `data/alteracoes-2026.json` mantém os registros confirmados diretamente em comunicado eleitoral e o escopo geográfico. Ausência de registro, em qualquer base, **não permite concluir que o local permaneceu igual**.
+
+## Usabilidade e validação
+
+- Pesquisa automática por cidade, com zona e seção opcionais.
+- Troca de cidade limpa zona, seção e resultados desatualizados.
+- Resultados recolhíveis quando a cidade contém muitos locais.
+- Link de mapa/rota somente quando o novo endereço possui informação suficiente.
+- Layout mobile compacto, opção de movimento reduzido, controles por teclado, foco visível e nomes acessíveis.
+- 19 testes automatizados de dados, interface e integridade de escopo.
+- Cenários executados no Chromium para smartphone e desktop, sem rolagem horizontal e sem erros de JavaScript.
+- Auditoria automática axe-core WCAG 2 A/AA e 2.1 A/AA sem violações nas telas inicial e de consulta testadas. Isso não substitui testes manuais com tecnologias assistivas.
+
+A consulta oficial individual permanece no [Autoatendimento Eleitoral do TSE](https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/atendimento-eleitor/onde-votar) ou no e-Título.
 
 ## Executar
 
