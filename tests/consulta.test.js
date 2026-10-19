@@ -167,22 +167,20 @@ test('auditoria de todas as cidades e zonas do espelho secundário, sem zonas va
  assert.match(guarulhos[2][0][3][0],/Colégio Canadá/);
 });
 
-test('revisão editorial: zona não repete jargão do levantamento ou contadores técnicos',()=>{
+test('revisão editorial e cartões acessíveis',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
  const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
- assert.doesNotMatch(html,/Seções alteradas em levantamento secundário/i);
- assert.doesNotMatch(html,/zona\\(s\\) listada\\(s\\)/);
- assert.doesNotMatch(html,/Estado monitorado|Cidade com mudança documentada/);
- assert.doesNotMatch(html,/info-panel/);
- assert.doesNotMatch(html,/scope-caption/);
- assert.doesNotMatch(app,/município\\(s\\)/);
- assert.match(html,/Cartões amarelos identificam zonas com seções na lista/);
- assert.match(html,/Este não é um site oficial da Justiça Eleitoral/);
- assert.match(html,/Consulta oficial no TSE/);
-});
-test('cartões de zonas mantêm município e número de seções e são acessíveis',()=>{
- const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
- assert.match(html,/sections\.size===1\\?'seção':'seções'/);
- assert.match(html,/button\.setAttribute\\('aria-label'/);
- assert.match(html,/zone-option--reported/);
+ assert.ok(!html.includes('Seções alteradas em levantamento secundário'));
+ assert.ok(!html.includes('zona(s) listada(s)'));
+ assert.ok(!html.includes('Estado monitorado'));
+ assert.ok(!html.includes('Cidade com mudança documentada'));
+ assert.ok(!html.includes('class="info-panel"'));
+ assert.ok(!html.includes('class="scope-caption"'));
+ assert.ok(!app.includes('município(s)'));
+ assert.ok(html.includes('Cartões amarelos identificam zonas com seções na lista'));
+ assert.ok(html.includes('Este não é um site oficial da Justiça Eleitoral'));
+ assert.ok(html.includes('Consulta oficial no TSE'));
+ assert.ok(html.includes("sections.size===1?'seção':'seções'"));
+ assert.ok(html.includes("button.setAttribute('aria-label'"));
+ assert.ok(html.includes('zone-option--reported'));
 });
