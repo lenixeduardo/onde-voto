@@ -71,10 +71,10 @@ function renderRecord(r,sectionNumber){
  const newLocation=locationCard('Novo local',r.novo,true);
  if(r.novo.endereco&&r.novo.endereco.trim()&&/(rua|avenida|av\.|estrada|rodovia|praça|travessa|alameda|largo|r\.|quadra|bairro|povoado|sítio|sitio|fazenda|km\b)/i.test(r.novo.endereco)){
   const mapsAction=link('Abrir endereço no Google Maps ↗',mapsPlaceUrl(r),'map-address-link');
-  mapsAction.setAttribute('aria-label','Abrir no Google Maps o novo local de votação: '+r.novo.endereco+', '+r.cidade);
+  mapsAction.setAttribute('aria-label','Abrir endereço no Google Maps ↗ — '+r.novo.endereco+', '+r.cidade);
   newLocation.lastChild.append(mapsAction);
   const routeAction=link('Traçar rota ↗',mapsDirectionsUrl(r),'map-directions-link');
-  routeAction.setAttribute('aria-label','Traçar rota até o novo local de votação no Google Maps');
+  routeAction.setAttribute('aria-label','Traçar rota ↗ até '+r.novo.endereco+', '+r.cidade);
   newLocation.lastChild.append(routeAction);
  }else{
   newLocation.lastChild.append(node('small','address-warning','Novo endereço não detalhado na fonte secundária; consulte o TSE.'));
@@ -84,7 +84,7 @@ function renderRecord(r,sectionNumber){
  card.append(data);
  if(r.uf==='RJ'&&r.zona===188&&r.novo.endereco){
   const map=link('',''+mapsPlaceUrl(r),'result-map result-map--interactive');
-  map.setAttribute('aria-label','Abrir no Google Maps o novo endereço: '+r.novo.endereco+', '+r.cidade);
+  map.setAttribute('aria-label','Abrir novo endereço no Google Maps ↗ — '+r.novo.endereco+', '+r.cidade);
   const img=node('img');img.src='assets/mapa-exemplo-rio.webp';img.alt='Prévia ilustrativa do trajeto entre os locais; toque para abrir o endereço atualizado no Google Maps';
   add(map,img,node('span','map-label','Abrir novo endereço no Google Maps ↗'));
   card.append(map);
