@@ -25,6 +25,14 @@ function searchableRecords(data,uf,cityName,zoneNumber,sectionNumber){
 }
 function originalResult(result){return result.status==='confirmado_tre';}
 function locationCard(label,data,isAfter){const el=node('div',`location location--${isAfter?'after':'before'}`);const marker=add(node('div','location__marker'),node('img'));marker.firstChild.src='assets/svg/pin.svg';marker.firstChild.alt='';const body=node('div');add(body,node('h3','',label),node('strong','',data.nome),node('p','',data.endereco));add(el,marker,body);return el;}
+function mapsPlaceUrl(r){
+ const address=[r.novo?.nome,r.novo?.endereco,r.cidade,r.uf,'Brasil'].filter(Boolean).join(', ');
+ return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(address);
+}
+function mapsDirectionsUrl(r){
+ const address=[r.novo?.nome,r.novo?.endereco,r.cidade,r.uf,'Brasil'].filter(Boolean).join(', ');
+ return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(address);
+}
 function renderRecord(r,sectionNumber){
  const officialRecord=originalResult(r), exactSection=sectionNumber&&r.secoes.includes(sectionNumber);
  const card=node('article','result-card dynamic-result');
@@ -38,11 +46,22 @@ function renderRecord(r,sectionNumber){
  const div=node('div');add(div,node('span','',label),node('strong','',v));meta.append(div);
  }
  data.append(meta);
- const compare=node('div','location-compare');compare.append(locationCard('Local anterior',r.anterior,false));const arrow=node('img','compare-arrow');arrow.src='assets/svg/arrow-right.svg';arrow.alt='Transferido para';compare.append(arrow,locationCard('Novo local',r.novo,true));data.append(compare);
+ const compare=node('div','location-compare');compare.append(locationCard('Local anterior',r.anterior,false));const arrow=node('img','compare-arrow');arrow.src='assets/svg/arrow-right.svg';arrow.alt='Transferido para';
+ const newLocation=locationCard('Novo local',r.novo,true);
+ const mapsAction=link('Abrir endereço no Google Maps ↗',mapsPlaceUrl(r),'map-address-link');
+ mapsAction.setAttribute('aria-label','Abrir no Google Maps o novo local de votação: '+r.novo.endereco+', '+r.cidade);
+ newLocation.lastChild.append(mapsAction);
+ compare.append(arrow,newLocation);data.append(compare);
  const footer=node('div','sections-strip');const fi=node('img');fi.src='assets/svg/file-text.svg';fi.alt='';add(footer,fi,node('strong','',r.fonte.orgao),node('span','',`Publicado em ${r.fonte.data.split('-').reverse().join('/')}`),link('Ver fonte ↗',r.fonte.url,'source-link'));data.append(footer);
  const caution=node('p','card-caution',officialRecord?'Este registro foi confirmado no comunicado do TRE, mas pode receber atualizações. Confira seu local individualmente no TSE.':'Informação republicada pela imprensa, sem conferência independente no cadastro individual. Endereços podem estar incompletos.');data.append(caution);
  card.append(data);
- if(r.uf==='RJ'&&r.zona===188){const map=node('div','result-map');const img=node('img');img.src='assets/mapa-exemplo-rio.webp';img.alt='Mapa ilustrativo: Brás de Pina para Penha Circular no Rio de Janeiro';add(map,img,node('span','map-label','Mapa ilustrativo · não é rota oficial'));card.append(map);}
+ if(r.uf==='RJ'&&r.zona===188){
+  const map=link('',''+mapsPlaceUrl(r),'result-map result-map--interactive');
+  map.setAttribute('aria-label','Abrir no Google Maps o novo endereço: '+r.novo.endereco+', '+r.cidade);
+  const img=node('img');img.src='assets/mapa-exemplo-rio.webp';img.alt='Prévia ilustrativa do trajeto entre os locais; toque para abrir o endereço atualizado no Google Maps';
+  add(map,img,node('span','map-label','Abrir novo endereço no Google Maps ↗'));
+  card.append(map);
+ }
  return card;
 }
 function emptyResult(title,text){qs('empty-title').textContent=title;qs('empty-text').textContent=text;qs('empty-card').hidden=false;}
