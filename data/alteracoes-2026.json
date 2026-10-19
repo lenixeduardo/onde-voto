@@ -1,0 +1,49 @@
+{
+  "schema_version": 2,
+  "eleicao": "Eleições gerais 2026 — 2º turno",
+  "dia_votacao": "2026-10-25",
+  "data_base": "2026-10-18",
+  "cobertura": "parcial",
+  "metodologia": "Escopo geográfico restrito a SP, MG, RJ e BA. Apenas alterações com zona, seções e endereços documentados aparecem como resultados. Não se trata de consulta individual nem de cobertura completa do TSE. Ausência de registro NÃO comprova ausência de alteração.",
+  "consulta_oficial": "https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/atendimento-eleitor/onde-votar",
+  "noticia_tse": "https://www.tse.jus.br/comunicacao/noticias/2026/Outubro/consulte-com-antecedencia-o-local-onde-voce-ira-votar-no-2o-turno",
+  "painel_tse": "https://sig.tse.jus.br/",
+  "registros": [
+    {
+      "id": "rj-rio-188-eeepv",
+      "uf": "RJ",
+      "cidade": "Rio de Janeiro",
+      "zona": 188,
+      "secoes": [
+        123,
+        124,
+        125,
+        126,
+        127
+      ],
+      "regiao": "Brás de Pina / Penha Circular",
+      "anterior": {
+        "nome": "Rede de Ensino EEEPV",
+        "endereco": "Rua Muaná, 105 — Brás de Pina"
+      },
+      "novo": {
+        "nome": "Rede de Ensino EEEPV",
+        "endereco": "Rua Irapuá, 243 — Penha Circular"
+      },
+      "status": "confirmado_tre",
+      "fonte": {
+        "orgao": "TRE-RJ",
+        "url": "https://www.tre-rj.jus.br/comunicacao/noticias/2026/Outubro/eleicoes-2026-apenas-um-local-de-votacao-foi-alterado-para-o-segundo-turno-no-rj",
+        "data": "2026-10-17"
+      },
+      "nota": "Transferência oficial entre os turnos de 4 e 25 de outubro de 2026."
+    }
+  ],
+  "estados_monitorados": [
+    "SP",
+    "MG",
+    "RJ",
+    "BA"
+  ],
+  "descricao_escopo": "Consulta restrita aos quatro estados identificados no levantamento inicial: São Paulo, Minas Gerais, Rio de Janeiro e Bahia. A existência de alteração em determinado estado não implica mudança em todas as cidades ou zonas."
+}

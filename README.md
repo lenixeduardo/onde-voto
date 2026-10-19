@@ -53,9 +53,9 @@ A página é informativa, baseada em dados documentados; não fornece validaçã
 
 ## Capturas do projeto
 
-![Captura da versão desktop](docs/captura-desktop.png)
+Capturas originais disponíveis no pacote local de design.
 
-![Captura da versão mobile](docs/captura-mobile.png)
+
 
 ## Controle de versão
 
