@@ -45,7 +45,37 @@ function searchableRecords(data,uf,cityName,zoneNumber,sectionNumber){
  return {matching,precise};
 }
 function originalResult(result){return result.status==='confirmado_tre';}
-function locationCard(label,data,isAfter){const el=node('div',`location location--${isAfter?'after':'before'}`);const marker=add(node('div','location__marker'),node('img'));marker.firstChild.src='assets/svg/pin.svg';marker.firstChild.alt='';const body=node('div');add(body,node('h3','',label),node('strong','',data.nome||'Local não informado'),node('p','',data.endereco||'Endereço não disponível no levantamento. Consulte o TSE ou o e-Título.'));add(el,marker,body);return el;}
+function hasMappableAddress(data){
+ return Boolean(data?.endereco && /(rua|avenida|av\\.|estrada|rodovia|praça|travessa|alameda|largo|r\\.|quadra|bairro|povoado|sítio|sitio|fazenda|km\\b)/i.test(data.endereco));
+}
+function actionLink(label,url,cls,assetName){
+ const a=link('',url,cls);
+ const icon=node('img');icon.src='assets/svg/'+assetName+'.svg';icon.alt='';icon.setAttribute('aria-hidden','true');
+ a.append(icon,node('span','',label));
+ return a;
+}
+function locationCard(label,data,isAfter,navigation=null){
+ const el=node('div','location location--'+(isAfter?'after':'before'));
+ const marker=add(node('div','location__marker'),node('img'));
+ marker.firstChild.src='assets/svg/pin.svg';marker.firstChild.alt='';
+ const body=node('div');
+ add(body,node('h3','',label),node('strong','',data.nome||'Local não informado'));
+ const address=data.endereco||'Endereço não disponível no levantamento. Consulte o TSE ou o e-Título.';
+ if(navigation?.mapUrl){
+  const addressLink=link('',navigation.mapUrl,'address-link');
+  const icon=node('img');icon.src='assets/svg/external-link.svg';icon.alt='';icon.setAttribute('aria-hidden','true');
+  addressLink.append(node('span','',address),icon);
+  addressLink.append(node('span','sr-only','Abrir no Google Maps em uma nova aba'));
+  body.append(addressLink);
+  const actions=node('div','location-actions');
+  actions.append(actionLink('Traçar rota',navigation.routeUrl,'map-directions-link','route'));
+  body.append(actions);
+ }else{
+  body.append(node('p','',address));
+ }
+ add(el,marker,body);
+ return el;
+}
 function mapsPlaceUrl(r){
  const address=[r.novo?.nome,r.novo?.endereco,r.cidade,r.uf,'Brasil'].filter(Boolean).join(', ');
  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(address);
@@ -68,27 +98,24 @@ function renderRecord(r,sectionNumber){
  }
  data.append(meta);
  const compare=node('div','location-compare');compare.append(locationCard('Local anterior',r.anterior,false));const arrow=node('img','compare-arrow');arrow.src='assets/svg/arrow-right.svg';arrow.alt='Transferido para';
- const newLocation=locationCard('Novo local',r.novo,true);
- if(r.novo.endereco&&r.novo.endereco.trim()&&/(rua|avenida|av\.|estrada|rodovia|praça|travessa|alameda|largo|r\.|quadra|bairro|povoado|sítio|sitio|fazenda|km\b)/i.test(r.novo.endereco)){
-  const mapsAction=link('Abrir endereço no Google Maps ↗',mapsPlaceUrl(r),'map-address-link');
-  mapsAction.setAttribute('aria-label','Abrir endereço no Google Maps ↗ — '+r.novo.endereco+', '+r.cidade);
-  newLocation.lastChild.append(mapsAction);
-  const routeAction=link('Traçar rota ↗',mapsDirectionsUrl(r),'map-directions-link');
-  routeAction.setAttribute('aria-label','Traçar rota ↗ até '+r.novo.endereco+', '+r.cidade);
-  newLocation.lastChild.append(routeAction);
- }else{
-  newLocation.lastChild.append(node('small','address-warning','Novo endereço não detalhado na fonte secundária; consulte o TSE.'));
- }
- compare.append(arrow,newLocation);data.append(compare);
- const footer=node('div','sections-strip');const fi=node('img');fi.src='assets/svg/file-text.svg';fi.alt='';add(footer,fi,node('strong','',officialRecord?r.fonte.orgao:'Levantamento independente'),node('span','',r.fonte.data.split('-').reverse().join('/')),link('Ver origem ↗',r.fonte.url,'source-link'));data.append(footer);
+ const mapUrl=hasMappableAddress(r.novo)?mapsPlaceUrl(r):null;
+ const newLocation=locationCard('Novo local',r.novo,true,mapUrl?{mapUrl,routeUrl:mapsDirectionsUrl(r)}:null);
+ if(!mapUrl)newLocation.lastChild.append(node('small','address-warning','Novo endereço não detalhado na fonte secundária. Confirme no TSE.'));
+  compare.append(arrow,newLocation);data.append(compare);
+ const footer=node('div','sections-strip');const fi=node('img');fi.src='assets/svg/file-text.svg';fi.alt='';add(footer,fi,node('strong','',officialRecord?r.fonte.orgao:'Levantamento independente'),node('span','',r.fonte.data.split('-').reverse().join('/')),actionLink('Ver origem',r.fonte.url,'source-link','external-link'));data.append(footer);
  card.append(data);
- if(r.uf==='RJ'&&r.zona===188&&r.novo.endereco){
-  const map=link('',''+mapsPlaceUrl(r),'result-map result-map--interactive');
-  map.setAttribute('aria-label','Abrir novo endereço no Google Maps ↗ — '+r.novo.endereco+', '+r.cidade);
-  const img=node('img');img.src='assets/mapa-exemplo-rio.webp';img.alt='Prévia ilustrativa do trajeto entre os locais; toque para abrir o endereço atualizado no Google Maps';
-  add(map,img,node('span','map-label','Abrir novo endereço no Google Maps ↗'));
+ if(r.uf==='RJ'&&r.zona===188&&mapUrl){
+  const map=link('',mapUrl,'result-map result-map--interactive');
+  map.setAttribute('aria-label','Ver endereço no Google Maps: '+r.novo.endereco+', '+r.cidade);
+  const img=node('img');img.src='assets/mapa-exemplo-rio.webp';img.alt='Prévia ilustrativa do local indicado no Rio de Janeiro';
+  const label=node('span','map-label');
+  const mapIcon=node('img');mapIcon.src='assets/svg/external-link.svg';mapIcon.alt='';
+  mapIcon.setAttribute('aria-hidden','true');
+  label.append(node('span','','Ver endereço no Google Maps'),mapIcon);
+  map.append(img,label);
   card.append(map);
  }
+
  return card;
 }
 function emptyResult(title,text){qs('empty-title').textContent=title;qs('empty-text').textContent=text;qs('empty-card').hidden=false;}
@@ -130,7 +157,7 @@ async function search(ev,shouldScroll=true){
      const disclosure=node('details','result-disclosure');
      const summary=node('summary','result-disclosure__summary');
      const name=node('strong','',r.zona+'ª Zona Eleitoral');
-     const change=node('span','',r.anterior.nome+' → '+r.novo.nome);
+     const change=node('span','',r.anterior.nome+' / Novo local: '+r.novo.nome);
      summary.append(name,change);disclosure.append(summary,renderRecord(r,null));container.append(disclosure);
     }
    }else{
