@@ -59,3 +59,37 @@
  .result-disclosure__summary strong{font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){.result-disclosure__summary::after{transition:none}}
+
+
+/* Evita que os links e nomes longos ultrapassem cartões em telas estreitas.
+   Em coluna, os cartões anterior/novo não podem compartilhar a mesma altura via flex:1. */
+.result-card,.result-data,.location-compare,.location,.sections-strip{min-width:0;max-width:100%}
+.location{height:auto;overflow:visible}
+.location>div:last-child{flex:1 1 auto;min-width:0;max-width:100%;overflow-wrap:break-word}
+.location h3,.location strong,.location p,.result-meta strong,.sections-strip strong{overflow-wrap:break-word}
+.location .map-address-link,.location .map-directions-link{display:flex;align-items:center;width:fit-content;max-width:100%;min-height:30px;margin-top:6px;white-space:normal;overflow-wrap:anywhere;word-break:normal;line-height:1.4;text-decoration-thickness:1px}
+.sections-strip{height:auto;align-items:center;gap:6px 10px;overflow-wrap:break-word}
+.sections-strip>strong{flex:1 1 140px;min-width:0}
+.sections-strip>.source-link{flex:0 1 auto;white-space:normal;min-height:28px;display:inline-flex;align-items:center}
+.reported-banner,.success-banner{height:auto;min-height:53px;padding:10px 12px;align-items:center;gap:10px}
+.reported-banner strong,.success-banner strong{flex:1;min-width:0;line-height:1.35;overflow-wrap:break-word}
+@media(max-width:680px){
+ .location-compare{align-items:stretch;gap:12px}
+ .location-compare>.location{flex:0 0 auto;min-height:0;width:100%;padding:14px;gap:12px}
+ .location__marker{width:37px;height:37px;margin-top:2px}
+ .location__marker img{width:24px;height:24px}
+ .location h3{font-size:15px}
+ .location strong{line-height:1.35}
+ .location p{line-height:1.45}
+ .location .map-address-link,.location .map-directions-link{font-size:13px}
+ .sections-strip{padding:10px 12px;align-items:center}
+ .sections-strip>strong{flex-basis:150px}
+ .result-meta>div{min-width:0}
+ .reported-banner,.success-banner{font-size:15px}
+}
+@media(max-width:360px){
+ .result-meta{grid-template-columns:1fr!important}
+ .result-meta>div{border-right:none!important;padding-left:0!important}
+ .location-compare>.location{padding:12px;gap:10px}
+ .sections-strip>strong{flex-basis:100px}
+}
