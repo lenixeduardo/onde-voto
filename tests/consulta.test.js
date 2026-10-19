@@ -178,7 +178,7 @@ test('revisão editorial: zona não repete jargão do levantamento ou contadores
  assert.doesNotMatch(app,/município\\(s\\)/);
  assert.match(html,/Cartões amarelos identificam zonas com seções na lista/);
  assert.match(html,/Este não é um site oficial da Justiça Eleitoral/);
- assert.match(html,/Autoatendimento Eleitoral/);
+ assert.match(html,/Consulta oficial no TSE/);
 });
 test('cartões de zonas mantêm município e número de seções e são acessíveis',()=>{
  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
