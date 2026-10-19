@@ -184,7 +184,7 @@ test('revisão editorial e cartões acessíveis',()=>{
  assert.ok(html.includes('info.textContent=onlyState?entry.city:'));
  assert.ok(html.includes('button.append(title)'));
  assert.ok(!html.includes("entry.records.flatMap(r=>r.secoes)"));
- assert.ok(html.includes("button.setAttribute('aria-label'"));
+ assert.ok(html.includes("origin.className='sr-only'"));
  assert.ok(html.includes('zone-option--reported'));
 });
 
@@ -207,4 +207,13 @@ test('consulta aceita cidade sem obrigar número de zona',()=>{
  assert.ok(html.includes('form.requestSubmit();'));
  assert.ok(html.includes('role="region"'));
  assert.ok(html.includes('field-optional'));
+});
+
+test('nomes acessíveis dos controles respeitam o texto visível',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ assert.ok(!html.includes("button.setAttribute('aria-label'"));
+ assert.ok(html.includes("origin.className='sr-only'"));
+ assert.ok(html.includes('.sr-only{position:absolute'));
+ assert.ok(app.includes("Abrir endereço no Google Maps ↗ — "));
 });
