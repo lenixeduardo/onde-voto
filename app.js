@@ -33,13 +33,12 @@ function mirrorRecords(dataset,uf,municipio,zona){
  })));
 }
 
-let citiesLoaded={};
 const permittedUFs=new Set(Object.keys(UFS));
 function node(tag,cls,content){const n=document.createElement(tag);if(cls)n.className=cls;if(content!==undefined)n.textContent=String(content);return n;}
 function link(text,url,cls){const a=node('a',cls,text);a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a;}
 function add(parent,...children){for(const c of children)parent.append(c);return parent;}
 function scrollResult(){if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;qs('results-title').scrollIntoView({behavior:'smooth',block:'start'});}
-async function loadBase(){if(documentBase)return documentBase;const res=await fetch(databaseURL,{cache:'no-store'});if(!res.ok)throw new Error('Base documental indisponível');const data=await res.json();if(!Array.isArray(data.registros)||!Array.isArray(data.estados_monitorados)||data.estados_monitorados.length!==4||data.estados_monitorados.some(uf=>!permittedUFs.has(uf))||data.registros.some(r=>!permittedUFs.has(r.uf)))throw new Error('Base fora do escopo autorizado');documentBase=data;qs('base-updated').textContent=`SP · MG · RJ · BA | Base parcial • atualizada em ${data.data_base.split('-').reverse().join('/')}`;return data;}
+async function loadBase(){if(documentBase)return documentBase;const res=await fetch(databaseURL,{cache:'no-store'});if(!res.ok)throw new Error('Base documental indisponível');const data=await res.json();if(!Array.isArray(data.registros)||!Array.isArray(data.estados_monitorados)||data.estados_monitorados.length!==4||data.estados_monitorados.some(uf=>!permittedUFs.has(uf))||data.registros.some(r=>!permittedUFs.has(r.uf)))throw new Error('Base fora do escopo autorizado');documentBase=data;qs('base-updated').textContent='Lista de mudanças · 17/10/2026';return data;}
 function searchableRecords(data,uf,cityName,zoneNumber,sectionNumber){
  const matching=permittedUFs.has(uf)?data.registros.filter(x=>x.uf===uf&&normalize(x.cidade)===normalize(cityName)&&Number(x.zona)===zoneNumber):[];
  const precise=sectionNumber ? matching.filter(x=>x.secoes.includes(sectionNumber)):matching;
@@ -61,7 +60,7 @@ function renderRecord(r,sectionNumber){
  const data=node('div','result-data');
  const banner=node('div',officialRecord?'success-banner':'reported-banner');
  const status=add(node('span','status-icon'),node('img'));status.firstChild.src=officialRecord?'assets/svg/check.svg':'assets/svg/info.svg';status.firstChild.alt='';
- add(banner,status,node('strong','',officialRecord?'Mudança confirmada pelo TRE':'Mudança noticiada — confirme no TSE'));
+ add(banner,status,node('strong','',officialRecord?'Alteração confirmada pelo TRE':'Alteração indicada na lista consultada'));
  data.append(banner);
  const meta=node('div','result-meta');
  for(const [label,v] of [['Cidade:',`${r.cidade} / ${r.uf}`],['Zona eleitoral:',`${r.zona}ª ZE`],['Seções afetadas:',r.secoes.join(', ')],['Situação:',sectionNumber?(exactSection?'Seção indicada neste registro':'Seção não indicada'):'Afeta apenas as seções indicadas']]){
@@ -81,8 +80,7 @@ function renderRecord(r,sectionNumber){
   newLocation.lastChild.append(node('small','address-warning','Novo endereço não detalhado na fonte secundária; consulte o TSE.'));
  }
  compare.append(arrow,newLocation);data.append(compare);
- const footer=node('div','sections-strip');const fi=node('img');fi.src='assets/svg/file-text.svg';fi.alt='';add(footer,fi,node('strong','',r.fonte.orgao),node('span','',`Publicado em ${r.fonte.data.split('-').reverse().join('/')}`),link('Ver fonte ↗',r.fonte.url,'source-link'));data.append(footer);
- const caution=node('p','card-caution',officialRecord?'Este registro foi confirmado no comunicado do TRE, mas pode receber atualizações. Confira seu local individualmente no TSE.':'Dados do espelho independente, sem conferência com o TRE. Endereços podem estar incompletos; confira no TSE.');data.append(caution);
+ const footer=node('div','sections-strip');const fi=node('img');fi.src='assets/svg/file-text.svg';fi.alt='';add(footer,fi,node('strong','',officialRecord?r.fonte.orgao:'Levantamento independente'),node('span','',r.fonte.data.split('-').reverse().join('/')),link('Ver origem ↗',r.fonte.url,'source-link'));data.append(footer);
  card.append(data);
  if(r.uf==='RJ'&&r.zona===188){
   const map=link('',''+mapsPlaceUrl(r),'result-map result-map--interactive');
@@ -96,7 +94,7 @@ function renderRecord(r,sectionNumber){
 function emptyResult(title,text){qs('empty-title').textContent=title;qs('empty-text').textContent=text;qs('empty-card').hidden=false;}
 async function search(ev,shouldScroll=true){if(ev)ev.preventDefault();const uf=sel.value,c=city.value.trim(),z=Number(zone.value),s=section.value.trim();
  if(!permittedUFs.has(uf)){qs('results-container').hidden=true;emptyResult('Estado fora do escopo','Esta página consulta exclusivamente São Paulo, Minas Gerais, Rio de Janeiro e Bahia.');return;}
- if(!uf||!c||!Number.isInteger(z)||z<1||z>999||(s&&(!/^\d{1,4}$/.test(s)||Number(s)<1))){qs('results-container').hidden=true;emptyResult('Verifique os campos','Preencha o município e uma zona eleitoral válida (1 a 999). A seção é opcional.');return;}
+ if(!uf||!c||!Number.isInteger(z)||z<1||z>999||(s&&(!/^\d{1,4}$/.test(s)||Number(s)<1))){qs('results-container').hidden=true;emptyResult('Confira os campos','Selecione uma cidade e uma zona eleitoral válida.');return;}
  const button=qs('buscar');button.disabled=true;button.querySelector('span').textContent='Consultando…';qs('loading').hidden=false;qs('empty-card').hidden=true;qs('error-card').hidden=true;qs('results-container').hidden=true;
  try{
   const b=await loadBase();let result;
@@ -116,9 +114,9 @@ async function search(ev,shouldScroll=true){if(ev)ev.preventDefault();const uf=s
   const container=qs('results-container');container.replaceChildren();
   if(result.registros.length){
    for(const r of result.registros)container.append(renderRecord(r,s?Number(s):null));container.hidden=false;
-   qs('results-description').textContent=`${result.registros.length} registro(s) localizado(s). Consulte as seções afetadas e confirme no TSE.`;
-  }else if(s && result.totalZona>0){emptyResult('Seção não incluída nos registros encontrados',`Há alteração documentada para a ${z}ª ZE de ${c}, mas não para a seção ${Number(s)} nos registros desta base parcial. Isso NÃO comprova que sua seção permaneceu no mesmo endereço.`);}
-  else{emptyResult('Alteração não verificada nesta base',`Não há informação comprovada por zona e seção para ${c} / ${UFS[uf]}, ${z}ª Zona Eleitoral nesta base parcial. O estado está no escopo de monitoramento, mas isso NÃO confirma se houve ou não mudança no seu local. Consulte o e-Título ou o TSE.`);}
+   qs('results-description').textContent=`${result.registros.length} ${result.registros.length===1?'mudança listada':'mudanças listadas'} em ${c} · Zona ${z}. Confirme sua seção no TSE.`;
+  }else if(s && result.totalZona>0){emptyResult('Seção não encontrada',`Não há registro para a seção ${Number(s)} da zona ${z} nesta lista. Isso não confirma que o endereço continua igual. Confira no TSE.`);}
+  else{emptyResult('Nenhum registro nesta lista',`Não encontramos dados para a zona ${z} de ${c}. A lista pode estar incompleta; confirme seu local no TSE ou no e-Título.`);}
   if(shouldScroll)scrollResult();
  }catch(e){console.error('Falha ao obter base:',e.message);qs('error-card').hidden=false;}
  finally{qs('loading').hidden=true;button.disabled=false;button.querySelector('span').textContent='Buscar alteração';}
@@ -127,7 +125,7 @@ function invalidateResults(){
  qs('results-container').hidden=true;
  qs('empty-card').hidden=true;
  qs('error-card').hidden=true;
- qs('results-description').textContent='Informe a cidade e a zona eleitoral para buscar registros documentados nos estados monitorados.';
+ qs('results-description').textContent='Selecione uma zona para consultar os endereços listados.';
 }
 // Somente municípios com alteração documental (seções e fonte identificadas) entram no select.
 function changedCities(data,uf){
@@ -143,21 +141,21 @@ function showCityOptions(data,uf,preliminary){
  const confirmed=changedCities(data,uf);
  const available=[...new Set([...confirmed,...((preliminary?.estados?.[uf]||[]).map(r=>r.cidade))])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  const current=city.value;
- const placeholder=available.length?'Selecione uma cidade':'Nenhuma cidade identificada no levantamento';
+ const placeholder=available.length?'Selecione uma cidade':'Nenhuma cidade nesta lista';
  city.replaceChildren(new Option(placeholder,''));
- for(const name of available)city.add(new Option(name+(confirmed.includes(name)?' · Confirmada pelo TRE':' · Levantamento preliminar'),name));
+ for(const name of available)city.add(new Option(name,name));
  const previous=available.find(name=>normalize(name)===normalize(current));
  city.value=previous||'';
  city.disabled=available.length===0;
  qs('cidade-aviso').textContent=available.length
-  ?`${available.length} município(s) com mudança reportada ou confirmada. Registros do levantamento secundário não comprovam alteração individual: confira no TSE.`
-  :'Nenhuma cidade deste estado tem mudança detalhada registrada nesta base. Isso não significa que não houve alterações. Consulte o TSE ou e-Título.';
+  ?`${available.length} ${available.length===1?'cidade':'cidades'} na lista de alterações.`
+  :'Nenhuma cidade encontrada nesta lista. Para confirmar seu endereço, consulte o TSE.';
 }
 async function updateCities(){
  const uf=sel.value;
  city.disabled=true;city.value='';zone.value='';section.value='';
  city.replaceChildren(new Option('Carregando municípios…',''));
- qs('cidade-aviso').textContent='Carregando municípios com mudanças documentadas…';
+ qs('cidade-aviso').textContent='Carregando cidades…';
  try{
   const data=await loadBase();
   let preliminary=null;
@@ -167,7 +165,7 @@ async function updateCities(){
  }catch(err){
   if(sel.value!==uf)return;
   city.replaceChildren(new Option('Lista de cidades indisponível',''));
-  qs('cidade-aviso').textContent='Não foi possível carregar os municípios. Atualize a página ou consulte o serviço oficial.';
+  qs('cidade-aviso').textContent='Não foi possível carregar as cidades. Tente novamente.';
   qs('error-card').hidden=false;
  }
 }
