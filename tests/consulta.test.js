@@ -203,7 +203,7 @@ test('consulta aceita cidade sem obrigar número de zona',()=>{
  assert.ok(!html.includes("if(!zone.value.trim())"));
  assert.ok(app.includes('const z=rawZone?Number(rawZone):null'));
  assert.ok(app.includes('if(!z&&!sectionNo&&records.length>3)'));
- assert.ok(app.includes("city.addEventListener('change',()=>{invalidateResults();if(city.value)search(null,false);});"));
+ assert.ok(app.includes("city.addEventListener('change',()=>{zone.value='';section.value='';invalidateResults();if(city.value)search(null,false);});"));
  assert.ok(html.includes('form.requestSubmit();'));
  assert.ok(html.includes('role="region"'));
  assert.ok(html.includes('field-optional'));
