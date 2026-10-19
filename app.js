@@ -46,7 +46,7 @@ function searchableRecords(data,uf,cityName,zoneNumber,sectionNumber){
  return {matching,precise};
 }
 function originalResult(result){return result.status==='confirmado_tre';}
-function locationCard(label,data,isAfter){const el=node('div',`location location--${isAfter?'after':'before'}`);const marker=add(node('div','location__marker'),node('img'));marker.firstChild.src='assets/svg/pin.svg';marker.firstChild.alt='';const body=node('div');add(body,node('h3','',label),node('strong','',data.nome),node('p','',data.endereco));add(el,marker,body);return el;}
+function locationCard(label,data,isAfter){const el=node('div',`location location--${isAfter?'after':'before'}`);const marker=add(node('div','location__marker'),node('img'));marker.firstChild.src='assets/svg/pin.svg';marker.firstChild.alt='';const body=node('div');add(body,node('h3','',label),node('strong','',data.nome||'Local não informado'),node('p','',data.endereco||'Endereço não disponível no levantamento. Consulte o TSE ou o e-Título.'));add(el,marker,body);return el;}
 function mapsPlaceUrl(r){
  const address=[r.novo?.nome,r.novo?.endereco,r.cidade,r.uf,'Brasil'].filter(Boolean).join(', ');
  return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(address);
@@ -70,15 +70,19 @@ function renderRecord(r,sectionNumber){
  data.append(meta);
  const compare=node('div','location-compare');compare.append(locationCard('Local anterior',r.anterior,false));const arrow=node('img','compare-arrow');arrow.src='assets/svg/arrow-right.svg';arrow.alt='Transferido para';
  const newLocation=locationCard('Novo local',r.novo,true);
- const mapsAction=link('Abrir endereço no Google Maps ↗',mapsPlaceUrl(r),'map-address-link');
- mapsAction.setAttribute('aria-label','Abrir no Google Maps o novo local de votação: '+r.novo.endereco+', '+r.cidade);
- newLocation.lastChild.append(mapsAction);
- const routeAction=link('Traçar rota ↗',mapsDirectionsUrl(r),'map-directions-link');
- routeAction.setAttribute('aria-label','Traçar rota até o novo local de votação no Google Maps');
- newLocation.lastChild.append(routeAction);
+ if(r.novo.endereco&&r.novo.endereco.trim()){
+  const mapsAction=link('Abrir endereço no Google Maps ↗',mapsPlaceUrl(r),'map-address-link');
+  mapsAction.setAttribute('aria-label','Abrir no Google Maps o novo local de votação: '+r.novo.endereco+', '+r.cidade);
+  newLocation.lastChild.append(mapsAction);
+  const routeAction=link('Traçar rota ↗',mapsDirectionsUrl(r),'map-directions-link');
+  routeAction.setAttribute('aria-label','Traçar rota até o novo local de votação no Google Maps');
+  newLocation.lastChild.append(routeAction);
+ }else{
+  newLocation.lastChild.append(node('small','address-warning','Novo endereço não detalhado na fonte secundária; consulte o TSE.'));
+ }
  compare.append(arrow,newLocation);data.append(compare);
  const footer=node('div','sections-strip');const fi=node('img');fi.src='assets/svg/file-text.svg';fi.alt='';add(footer,fi,node('strong','',r.fonte.orgao),node('span','',`Publicado em ${r.fonte.data.split('-').reverse().join('/')}`),link('Ver fonte ↗',r.fonte.url,'source-link'));data.append(footer);
- const caution=node('p','card-caution',officialRecord?'Este registro foi confirmado no comunicado do TRE, mas pode receber atualizações. Confira seu local individualmente no TSE.':'Informação republicada pela imprensa, sem conferência independente no cadastro individual. Endereços podem estar incompletos.');data.append(caution);
+ const caution=node('p','card-caution',officialRecord?'Este registro foi confirmado no comunicado do TRE, mas pode receber atualizações. Confira seu local individualmente no TSE.':'Dados do espelho independente, sem conferência com o TRE. Endereços podem estar incompletos; confira no TSE.');data.append(caution);
  card.append(data);
  if(r.uf==='RJ'&&r.zona===188){
   const map=link('',''+mapsPlaceUrl(r),'result-map result-map--interactive');
