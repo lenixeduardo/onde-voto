@@ -32,18 +32,27 @@
       </div><button id="buscar" class="search-button" type="submit"><img src="assets/svg/search.svg" alt=""/><span>Buscar alteração</span></button>
       <details class="advanced-filter"><summary>Filtrar por seção (opcional)</summary><div class="advanced-inner"><label for="secao">Número da seção eleitoral</label><input id="secao" name="secao" inputmode="numeric" pattern="[0-9]{1,4}" placeholder="Ex.: 123" maxlength="4"/><p>Use o número da seção para encontrar o endereço correspondente.</p></div></details>
     </form>
-    <aside class="independence" role="note"><div class="warning-symbol"><img src="assets/svg/alert-triangle.svg" alt=""/></div><div><strong>Este não é um site oficial da Justiça Eleitoral.</strong><p>Os registros reúnem fontes de tribunais eleitorais e um levantamento independente. Confirme seu endereço no <a class="in-notice" href="https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/atendimento-eleitor/onde-votar" target="_blank" rel="noopener noreferrer">TSE</a> ou no e-Título.</p></div></aside>
     <section class="results" aria-live="polite" aria-labelledby="results-title" role="region">
       <div class="section-heading"><h2 id="results-title">Resultado</h2><p id="results-description">Selecione uma zona para consultar os endereços listados.</p></div>
       <div id="loading" class="loading-card" role="status" hidden>Buscando informações…</div>
       <div id="error-card" class="notice-card notice-card--error" role="alert" hidden><strong>Não foi possível carregar os dados.</strong><p>Tente novamente ou consulte o TSE.</p></div>
       <div id="results-container" hidden></div>
       <article class="not-found" id="empty-card" hidden><span class="not-found__icon"><img src="assets/svg/info.svg" alt=""/></span><div><h3 id="empty-title">Nenhum registro encontrado</h3><p id="empty-text">A lista pode estar incompleta. Consulte o TSE para conferir seu local de votação.</p></div></article>
-      <p class="prototype-note"><span id="base-updated">Dados de 17/10/2026</span> · <a href="https://dapravirar.org/mudou-o-local" target="_blank" rel="noopener noreferrer" class="footer-external-link">Fonte da lista</a> · <a href="https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/atendimento-eleitor/onde-votar" target="_blank" rel="noopener noreferrer" class="footer-external-link">Consulta oficial no TSE</a></p>
+      
       <div class="helper-text" id="cidade-ajuda" hidden>Selecione uma das cidades da lista de mudanças.</div><div class="helper-text" id="zona-ajuda" hidden>Se não souber, deixe o campo em branco: uma lista de zonas documentadas na cidade será apresentada.</div>
     </section>
   </div>
 </main>
+<footer class="site-footer" role="contentinfo" aria-label="Sobre o Onde Voto">
+  <div class="layout site-footer__inner">
+    <p class="site-footer__disclaimer"><strong>Este não é um site oficial da Justiça Eleitoral.</strong> O Onde Voto? é uma iniciativa independente, sem vínculo com o TSE ou os TREs. As informações incluem fontes eleitorais e levantamento independente. Confirme seu local no e-Título ou na consulta oficial do TSE.</p>
+    <nav class="site-footer__references" aria-label="Fontes e consulta oficial">
+      <span id="base-updated">Dados de 17/10/2026</span>
+      <a href="https://dapravirar.org/mudou-o-local" target="_blank" rel="noopener noreferrer" class="footer-external-link">Fonte da lista</a>
+      <a href="https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/atendimento-eleitor/onde-votar" target="_blank" rel="noopener noreferrer" class="footer-external-link">Consulta oficial no TSE</a>
+    </nav>
+  </div>
+</footer>
 <style>
 .city-hint{font-size:11px;color:#55718b;line-height:1.4;min-height:17px}
 #cidade:disabled{background:#f3f6fa;color:#60758d;opacity:1}
