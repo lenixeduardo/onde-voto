@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  const assist=document.getElementById('zona-assist'),grid=document.getElementById('zona-opcoes');
  const notice=document.getElementById('zona-aviso'),counter=document.getElementById('zonas-contagem');
  const form=document.getElementById('consulta');
- const norm=s=>String(s||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().replace(/\\s+/g,' ').toLowerCase();
+ const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
  let basePromise=null,seq=0,debounce=null,zoneStatus=new Map();
  const getBase=()=>basePromise||(basePromise=fetch('/data/alteracoes-2026.json',{cache:'no-store'}).then(r=>{
   if(!r.ok)throw Error('Base indisponível');return r.json();
