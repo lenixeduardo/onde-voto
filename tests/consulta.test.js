@@ -108,3 +108,21 @@ test('lista somente municípios com seções alteradas e fonte documental por UF
  assert.deepEqual(Array.from(cities(fixture,'SP')),['São Paulo']);
  assert.deepEqual(Array.from(cities(fixture,'MG')),['Juiz de Fora']);
 });
+
+test('levantamento independente disponibiliza municípios em todos os estados sem fingir confirmação de endereços',()=>{
+ const reported=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/municipios-levantamento-2026.json'),'utf8'));
+ assert.equal(reported.status,'levantamento_secundario_preliminar');
+ for(const [uf,min] of [['SP',34],['MG',67],['RJ',9],['BA',48]]){
+  assert.ok(reported.estados[uf].length>=min);
+  assert.ok(reported.estados[uf].every(r=>r.cidade&&Number.isInteger(r.secoes)&&r.secoes>0));
+ }
+ assert.ok(reported.estados.SP.some(r=>r.cidade==='São Paulo'));
+ assert.ok(reported.estados.BA.some(r=>r.cidade==='Salvador'));
+});
+test('select mistura cidades documentadas e preliminares mas não as confunde com mudança confirmada',()=>{
+ const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ assert.match(app,/municipios-levantamento-2026\.json/);
+ assert.match(app,/Levantamento preliminar/);
+ assert.match(app,/Confirmada pelo TRE/);
+ assert.match(app,/preliminary\?\.estados/);
+});
