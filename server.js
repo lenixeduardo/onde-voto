@@ -23,6 +23,9 @@ function handler(req,res){const url=new URL(req.url||'/',`http://localhost`);
   return send(res,200,query(data,{uf,cidade,zona,secao:secaoRaw===null?null:Number(secaoRaw)}));
  }
  let file=allowed[url.pathname];
+ if(!file && /^\/data\/zonas-2026-(sp|mg|rj|ba)\.json$/.test(url.pathname))file=url.pathname.slice(1);
+ if(!file && url.pathname==='/data/municipios-levantamento-2026.json')file='data/municipios-levantamento-2026.json';
+ if(!file && url.pathname==='/data/zonas-capital-sp-2026.json')file='data/zonas-capital-sp-2026.json';
  if(!file && url.pathname.startsWith('/assets/')){
   const candidate=url.pathname.slice(1);
   if(!candidate.split('/').includes('..')&&/\.(svg|png)$/.test(candidate))file=candidate;
