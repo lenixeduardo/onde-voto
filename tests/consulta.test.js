@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const http=require('node:http');
 const os=require('node:os');
+const vm=require('node:vm');
 const {spawnSync}=require('node:child_process');
 const {load,query,handler,normalized,isMonitored}=require('../server.js');
 const data=load();
@@ -75,4 +76,35 @@ test('CSV com outro estado é rejeitado antes de gerar importação revisável',
   const run=spawnSync(process.execPath,[path.join(__dirname,'../scripts/importar-csv.js'),f],{encoding:'utf8'});
   assert.notEqual(run.status,0);assert.match(run.stderr,/fora do escopo/);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test('campo Cidade usa select, sem digitação livre ou datalist geral do IBGE',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ assert.match(html,/<select id="cidade" name="cidade" required/);
+ assert.doesNotMatch(html,/<input id="cidade"/);
+ assert.doesNotMatch(html,/<datalist id="lista-cidades"/);
+ assert.doesNotMatch(app,/servicodados\.ibge\.gov\.br/);
+ assert.match(app,/city\.addEventListener\('change',invalidateResults\)/);
+});
+test('lista somente municípios com seções alteradas e fonte documental por UF',()=>{
+ const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ const source=app.match(/function changedCities\(data,uf\)\{[\s\S]*?\n\}/)?.[0];
+ assert.ok(source,'changedCities deve existir no frontend');
+ const context=vm.createContext({normalize:normalized});
+ vm.runInContext(source,context);
+ const cities=vm.runInContext('changedCities',context);
+ assert.deepEqual(Array.from(cities(data,'RJ')),['Rio de Janeiro']);
+ assert.deepEqual(Array.from(cities(data,'SP')),[]);
+ assert.deepEqual(Array.from(cities(data,'MG')),[]);
+ assert.deepEqual(Array.from(cities(data,'BA')),[]);
+ const fixture={registros:[
+  {uf:'SP',cidade:'São Paulo',secoes:[5],fonte:{url:'https://tre-sp.jus.br'}},
+  {uf:'SP',cidade:'Sao Paulo',secoes:[12],fonte:{url:'https://tre-sp.jus.br'}},
+  {uf:'SP',cidade:'Campinas',secoes:[],fonte:{url:'https://tre-sp.jus.br'}},
+  {uf:'SP',cidade:'Sorocaba',secoes:[7]},
+  {uf:'MG',cidade:'Juiz de Fora',secoes:[5],fonte:{url:'https://tre-mg.jus.br'}}
+ ]};
+ assert.deepEqual(Array.from(cities(fixture,'SP')),['São Paulo']);
+ assert.deepEqual(Array.from(cities(fixture,'MG')),['Juiz de Fora']);
 });
