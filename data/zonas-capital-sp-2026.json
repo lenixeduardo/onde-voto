@@ -1,0 +1,158 @@
+{
+  "cidade": "São Paulo",
+  "uf": "SP",
+  "fonte": "TRE-SP, Portaria nº 55, de 16 de março de 2026",
+  "url": "https://www.tre-sp.jus.br/legislacao/compilada/portarias-tre-sp/2026/portaria-no-55-de-16-de-marco-de-2026",
+  "observacao": "Listagem oficial de zonas eleitorais da capital conforme trecho verificado da Portaria 55/2026. Não é lista de zonas com locais alterados e não representa cobertura completa do município.",
+  "completude": "parcial",
+  "zonas": [
+    {
+      "numero": 1,
+      "bairro": "Bela Vista"
+    },
+    {
+      "numero": 2,
+      "bairro": "Perdizes"
+    },
+    {
+      "numero": 3,
+      "bairro": "Santa Ifigênia"
+    },
+    {
+      "numero": 4,
+      "bairro": "Mooca"
+    },
+    {
+      "numero": 5,
+      "bairro": "Jardim Paulista"
+    },
+    {
+      "numero": 6,
+      "bairro": "Vila Mariana"
+    },
+    {
+      "numero": 20,
+      "bairro": "Valo Velho"
+    },
+    {
+      "numero": 246,
+      "bairro": "Santo Amaro"
+    },
+    {
+      "numero": 247,
+      "bairro": "São Miguel Paulista"
+    },
+    {
+      "numero": 248,
+      "bairro": "Itaquera"
+    },
+    {
+      "numero": 249,
+      "bairro": "Santana"
+    },
+    {
+      "numero": 250,
+      "bairro": "Lapa"
+    },
+    {
+      "numero": 251,
+      "bairro": "Pinheiros"
+    },
+    {
+      "numero": 252,
+      "bairro": "Penha de França"
+    },
+    {
+      "numero": 253,
+      "bairro": "Tatuapé"
+    },
+    {
+      "numero": 254,
+      "bairro": "Vila Maria"
+    },
+    {
+      "numero": 255,
+      "bairro": "Casa Verde"
+    },
+    {
+      "numero": 256,
+      "bairro": "Tucuruvi"
+    },
+    {
+      "numero": 257,
+      "bairro": "Vila Prudente"
+    },
+    {
+      "numero": 258,
+      "bairro": "Indianópolis"
+    },
+    {
+      "numero": 259,
+      "bairro": "Saúde"
+    },
+    {
+      "numero": 260,
+      "bairro": "Ipiranga"
+    },
+    {
+      "numero": 280,
+      "bairro": "Capela do Socorro"
+    },
+    {
+      "numero": 320,
+      "bairro": "Jabaquara"
+    },
+    {
+      "numero": 325,
+      "bairro": "Pirituba"
+    },
+    {
+      "numero": 326,
+      "bairro": "Ermelino Matarazzo"
+    },
+    {
+      "numero": 327,
+      "bairro": "Nossa Senhora do Ó"
+    },
+    {
+      "numero": 328,
+      "bairro": "Campo Limpo"
+    },
+    {
+      "numero": 346,
+      "bairro": "Morumbi"
+    },
+    {
+      "numero": 347,
+      "bairro": "Vila Matilde"
+    },
+    {
+      "numero": 348,
+      "bairro": "Vila Formosa"
+    },
+    {
+      "numero": 349,
+      "bairro": "Jaçanã"
+    },
+    {
+      "numero": 350,
+      "bairro": "Sapopemba"
+    },
+    {
+      "numero": 351,
+      "bairro": "Cidade Ademar"
+    },
+    {
+      "numero": 352,
+      "bairro": "Itaim Paulista"
+    },
+    {
+      "numero": 353,
+      "bairro": "Guaianases"
+    },
+    {
+      "numero": 371,
+      "bairro": "Grajaú"
+    }
+  ]
+}
