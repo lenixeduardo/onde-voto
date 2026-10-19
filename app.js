@@ -117,6 +117,7 @@ async function search(ev,shouldScroll=true){
   ]);
   if(id!==searchSequence)return;
   const officialRecords=base.registros.filter(r=>r.uf===uf&&normalize(r.cidade)===normalize(c)&&(!z||Number(r.zona)===z));
+  if(!mirror&&!officialRecords.length){qs('error-card').hidden=false;container.hidden=true;return;}
   const matchedOfficial=sectionNo?officialRecords.filter(r=>r.secoes.includes(sectionNo)):officialRecords;
   const verifiedSections=new Set(officialRecords.flatMap(r=>r.secoes.map(sec=>r.zona+':'+sec)));
   const additional=mirror?mirrorRecords(mirror,uf,c,z).filter(record=>record.secoes.some(sec=>!verifiedSections.has(record.zona+':'+sec))):[];
@@ -208,7 +209,7 @@ async function updateCities(){
 }
 qs('consulta').addEventListener('submit',search);
 sel.addEventListener('change',()=>{invalidateResults();updateCities();});
-city.addEventListener('change',()=>{invalidateResults();if(city.value)search(null,false);});
+city.addEventListener('change',()=>{zone.value='';section.value='';invalidateResults();if(city.value)search(null,false);});
 for(const field of [zone,section])field.addEventListener('input',invalidateResults);
 // O campo cidade nunca recebe municípios de um autocomplete geral, apenas da base de alterações.
 updateCities();
