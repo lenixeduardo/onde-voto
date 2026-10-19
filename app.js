@@ -46,7 +46,7 @@ function searchableRecords(data,uf,cityName,zoneNumber,sectionNumber){
 }
 function originalResult(result){return result.status==='confirmado_tre';}
 function hasMappableAddress(data){
- return Boolean(data?.endereco && /(rua|avenida|av\\.|estrada|rodovia|praça|travessa|alameda|largo|r\\.|quadra|bairro|povoado|sítio|sitio|fazenda|km\\b)/i.test(data.endereco));
+ return Boolean(data?.endereco && /(rua|avenida|av\.|estrada|rodovia|praça|travessa|alameda|largo|r\.|quadra|bairro|povoado|sítio|sitio|fazenda|km\b)/i.test(data.endereco));
 }
 function actionLink(label,url,cls,assetName){
  const a=link('',url,cls);
