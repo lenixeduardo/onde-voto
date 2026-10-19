@@ -215,7 +215,8 @@ test('nomes acessíveis dos controles respeitam o texto visível',()=>{
  assert.ok(!html.includes("button.setAttribute('aria-label'"));
  assert.ok(html.includes("origin.className='sr-only'"));
  assert.ok(html.includes('.sr-only{position:absolute'));
- assert.ok(app.includes("Abrir endereço no Google Maps ↗ — "));
+ assert.ok(app.includes("Abrir no Google Maps em uma nova aba"));
+ assert.ok(app.includes("addressLink.append(node('span','',address),icon)"));
 });
 
 test('regressão mobile: cartões de locais crescem com links e textos longos',()=>{
@@ -225,4 +226,22 @@ test('regressão mobile: cartões de locais crescem com links e textos longos',(
  assert.match(css,/\.location \.map-address-link,\.location \.map-directions-link\{display:flex/);
  assert.match(css,/\.sections-strip\{height:auto/);
  assert.match(css,/\.reported-banner,\.success-banner\{height:auto;min-height:53px/);
+});
+
+test('links de endereço, rota e fonte usam SVGs, sem setas unicode',()=>{
+ const app=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
+ const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
+ for(const source of [app,html])assert.doesNotMatch(source,/[↗➡➜→]/,'nenhuma seta textual deve aparecer na interface');
+ for(const icon of ['external-link','route']){
+  const svg=fs.readFileSync(path.join(__dirname,'../assets/svg/'+icon+'.svg'),'utf8');
+  assert.match(svg,/<svg /);assert.match(svg,/<path/);
+ }
+ assert.match(app,/function hasMappableAddress\(data\)/);
+ assert.match(app,/function locationCard\(label,data,isAfter,navigation=null\)/);
+ assert.match(app,/addressLink\.append\(node\('span','',address\),icon\)/);
+ assert.match(app,/actionLink\('Traçar rota',navigation\.routeUrl,'map-directions-link','route'\)/);
+ assert.match(app,/actionLink\('Ver origem',r\.fonte\.url,'source-link','external-link'\)/);
+ assert.match(css,/\.location \.address-link\{/);
+ assert.match(css,/\.footer-external-link::after\{/);
 });
