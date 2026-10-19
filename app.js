@@ -92,19 +92,47 @@ function invalidateResults(){
  qs('error-card').hidden=true;
  qs('results-description').textContent='Informe a cidade e a zona eleitoral para buscar registros documentados nos estados monitorados.';
 }
-const suggestions=qs('lista-cidades');
-async function updateCities(){const uf=sel.value;city.value='';zone.value='';section.value='';suggestions.replaceChildren();
- if(citiesLoaded[uf]){setSuggestions(citiesLoaded[uf]);return;}
- const local=(documentBase?.registros||[]).filter(r=>r.uf===uf).map(r=>r.cidade);
- setSuggestions([...new Set(local)]);
- try{const resp=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`,{signal:AbortSignal.timeout(5000)});if(!resp.ok)throw Error('IBGE indisponível');const all=(await resp.json()).map(x=>x.nome);citiesLoaded[uf]=all;setSuggestions(all);}catch(_){/* Autocomplete auxiliar, nunca requisito da pesquisa */}
+// Somente municípios com alteração documental (seções e fonte identificadas) entram no select.
+function changedCities(data,uf){
+ const found=new Map();
+ for(const record of data.registros||[]){
+  if(record.uf!==uf||!record.cidade||!Array.isArray(record.secoes)||record.secoes.length===0||!record.fonte?.url)continue;
+  const key=normalize(record.cidade);
+  if(!found.has(key))found.set(key,record.cidade);
+ }
+ return [...found.values()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
 }
-function setSuggestions(names){suggestions.replaceChildren(...[...new Set(names)].sort((a,b)=>a.localeCompare(b,'pt-BR')).map(c=>{const o=document.createElement('option');o.value=c;return o;}));}
+function showCityOptions(data,uf){
+ const available=changedCities(data,uf),current=city.value;
+ const placeholder=available.length?'Selecione uma cidade':'Nenhuma cidade com alteração documentada';
+ city.replaceChildren(new Option(placeholder,''));
+ for(const name of available)city.add(new Option(name,name));
+ const previous=available.find(name=>normalize(name)===normalize(current));
+ city.value=previous||'';
+ city.disabled=available.length===0;
+ qs('cidade-aviso').textContent=available.length
+  ?`${available.length} município(s) com mudança registrada nesta base parcial. Apenas estes municípios podem ser selecionados.`
+  :'Nenhuma cidade deste estado tem mudança detalhada registrada nesta base. Isso não significa que não houve alterações. Consulte o TSE ou e-Título.';
+}
+async function updateCities(){
+ const uf=sel.value;
+ city.disabled=true;city.value='';zone.value='';section.value='';
+ city.replaceChildren(new Option('Carregando municípios…',''));
+ qs('cidade-aviso').textContent='Carregando municípios com mudanças documentadas…';
+ try{
+  const data=await loadBase();
+  if(sel.value!==uf)return;
+  showCityOptions(data,uf);
+ }catch(err){
+  if(sel.value!==uf)return;
+  city.replaceChildren(new Option('Lista de cidades indisponível',''));
+  qs('cidade-aviso').textContent='Não foi possível carregar os municípios. Atualize a página ou consulte o serviço oficial.';
+  qs('error-card').hidden=false;
+ }
+}
 qs('consulta').addEventListener('submit',search);
 sel.addEventListener('change',()=>{invalidateResults();updateCities();});
-for(const field of [city,zone,section])field.addEventListener('input',invalidateResults);
-loadBase().then(data=>{
- setSuggestions([...new Set(data.registros.filter(x=>x.uf==='RJ').map(x=>x.cidade))]);
- // Resultados são mostrados apenas após uma seleção e consulta do eleitor.
- // A lista estadual das zonas documentadas é renderizada pelo seletor da interface.
-}).catch(()=>{qs('results-description').textContent='Não foi possível carregar os dados. Tente buscar novamente.';qs('error-card').hidden=false;});
+city.addEventListener('change',invalidateResults);
+for(const field of [zone,section])field.addEventListener('input',invalidateResults);
+// O campo cidade nunca recebe municípios de um autocomplete geral, apenas da base de alterações.
+updateCities();
