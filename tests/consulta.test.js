@@ -217,3 +217,12 @@ test('nomes acessíveis dos controles respeitam o texto visível',()=>{
  assert.ok(html.includes('.sr-only{position:absolute'));
  assert.ok(app.includes("Abrir endereço no Google Maps ↗ — "));
 });
+
+test('regressão mobile: cartões de locais crescem com links e textos longos',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
+ assert.match(css,/\.location-compare>\.location\{flex:0 0 auto/);
+ assert.match(css,/\.location>div:last-child\{flex:1 1 auto;min-width:0/);
+ assert.match(css,/\.location \.map-address-link,\.location \.map-directions-link\{display:flex/);
+ assert.match(css,/\.sections-strip\{height:auto/);
+ assert.match(css,/\.reported-banner,\.success-banner\{height:auto;min-height:53px/);
+});
