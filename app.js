@@ -11,6 +11,28 @@ const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
 const official='https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/atendimento-eleitor/onde-votar';
 const databaseURL='data/alteracoes-2026.json';
 let documentBase=null;
+const mirrorCache={};
+async function loadMirror(uf){
+ if(!permittedUFs.has(uf))throw new Error('UF fora do escopo');
+ if(!mirrorCache[uf])mirrorCache[uf]=fetch('/data/zonas-2026-'+uf.toLowerCase()+'.json',{cache:'no-store'}).then(async response=>{
+  if(!response.ok)throw new Error('Espelho de zonas indisponível');
+  const data=await response.json();
+  if(data.status!=='espelho_secundario')throw new Error('Fonte não identificada');
+  return data;
+ }).catch(error=>{delete mirrorCache[uf];throw error;});
+ return mirrorCache[uf];
+}
+function mirrorRecords(dataset,uf,municipio,zona){
+ const entries=Object.entries(dataset?.municipios||{}).filter(([id,v])=>v[0]===uf&&normalize(v[1])===normalize(municipio));
+ return entries.flatMap(([id,v])=>(v[2]||[]).filter(g=>!zona||g[0]===zona).map((g,i)=>({
+  id:'mirror-'+id+'-'+g[0]+'-'+i,uf,cidade:v[1],zona:g[0],secoes:g[1],
+  anterior:{nome:g[2][0],endereco:[g[2][1],g[2][2]].filter(Boolean).join(' — ')},
+  novo:{nome:g[3][0],endereco:[g[3][1],g[3][2]].filter(Boolean).join(' — ')},
+  status:'espelho_secundario',
+  fonte:{orgao:'Espelho de dados atribuídos ao TSE (não verificado no TRE)',url:'https://dapravirar.org/dados/mudancas/'+id+'.json',data:'2026-10-17'}
+ })));
+}
+
 let citiesLoaded={};
 const permittedUFs=new Set(Object.keys(UFS));
 function node(tag,cls,content){const n=document.createElement(tag);if(cls)n.className=cls;if(content!==undefined)n.textContent=String(content);return n;}
@@ -76,6 +98,17 @@ async function search(ev,shouldScroll=true){if(ev)ev.preventDefault();const uf=s
   const b=await loadBase();let result;
   try{const path=`/api/consulta?uf=${encodeURIComponent(uf)}&cidade=${encodeURIComponent(c)}&zona=${z}${s?`&secao=${encodeURIComponent(s)}`:''}`;const response=await fetch(path,{cache:'no-store'});if(!response.ok)throw new Error('fallback estático');const j=await response.json();if(!j||!Array.isArray(j.registros))throw new Error('Resposta inválida');result=j;}
   catch(e){const {matching,precise}=searchableRecords(b,uf,c,z,s?Number(s):null);result={registros:precise,totalZona:matching.length,cobertura:'parcial'};}
+  // Complemento secundário: municípios, zonas e seções individualizados. Não substituir fonte oficial.
+  try{
+   const mirror=await loadMirror(uf);
+   const candidates=mirrorRecords(mirror,uf,c,z);
+   const allIds=new Set(result.registros.flatMap(r=>r.secoes.map(sec=>r.zona+'-'+sec)));
+   const additional=candidates.filter(record=>record.secoes.some(sec=>!allIds.has(record.zona+'-'+sec)));
+   if(additional.length){
+    const precise=s?additional.filter(record=>record.secoes.includes(Number(s))):additional;
+    result.registros.push(...precise);result.totalZona+=additional.length;
+   }
+  }catch(error){console.warn('Espelho secundário indisponível:',error.message);}
   const container=qs('results-container');container.replaceChildren();
   if(result.registros.length){
    for(const r of result.registros)container.append(renderRecord(r,s?Number(s):null));container.hidden=false;
