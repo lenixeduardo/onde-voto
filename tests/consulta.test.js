@@ -64,7 +64,7 @@ test('interface só inclui os quatro estados e valida a base estática',()=>{
  const source=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
  assert.match(source,/const UFS=\{BA:'Bahia',MG:'Minas Gerais',RJ:'Rio de Janeiro',SP:'São Paulo'\}/);
  assert.match(source,/Base fora do escopo autorizado/);
- assert.match(source,/Alteração não verificada nesta base/);
+ assert.match(source,/Nenhum registro nesta lista/);
  assert.doesNotMatch(source,/AL:'Alagoas'/);
 });
 test('CSV com outro estado é rejeitado antes de gerar importação revisável',()=>{
