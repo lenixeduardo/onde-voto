@@ -16,13 +16,13 @@
     <div class="hero__cloud" aria-hidden="true"></div>
     <div class="layout hero__inner">
       <div class="brand"><img src="assets/svg/marca-onde-voto.svg" width="135" height="145" alt=""/><h1 id="page-title">Onde Voto?</h1></div>
-      <div class="hero__copy"><p class="hero__headline">Consulte se houve alteração no seu local de votação</p><p class="hero__subtitle">Informe sua cidade e, se souber, a zona eleitoral para consultar avisos de mudanças no 2º turno das Eleições 2026.</p></div>
+      <div class="hero__copy"><p class="hero__headline">Consulte se houve alteração no seu local de votação</p><p class="hero__subtitle">Selecione o estado e uma cidade com mudanças documentadas para consultar os avisos do 2º turno das Eleições 2026.</p></div>
     </div>
   </section>
   <div class="layout main-stack">
     <form id="consulta" class="search-panel" aria-label="Buscar alterações de local de votação">
       <div class="form-field"><label for="estado">Estado monitorado</label><div class="select-wrap"><select id="estado" name="uf" required aria-label="Estado"></select></div></div>
-      <div class="form-field"><label for="cidade">Cidade</label><input id="cidade" name="cidade" list="lista-cidades" placeholder="Digite o município" value="Rio de Janeiro" autocomplete="off" required maxlength="90" aria-describedby="cidade-ajuda"/><datalist id="lista-cidades"></datalist></div>
+      <div class="form-field"><label for="cidade">Cidade com mudança documentada</label><div class="select-wrap"><select id="cidade" name="cidade" required aria-describedby="cidade-aviso"><option value="">Carregando cidades…</option></select></div><small id="cidade-aviso" class="city-hint" role="status">Selecione o estado para carregar os municípios documentados.</small></div>
       <div class="form-field"><label for="zona">Zona eleitoral</label><input id="zona" name="zona" inputmode="numeric" pattern="[0-9]{1,3}" min="1" max="999" placeholder="Opcional — ex.: 188" value="" maxlength="3" aria-describedby="zona-ajuda" /></div>
       <div id="zona-assist" class="zone-assist" hidden>
         <div class="zone-assist__head"><strong id="zonas-titulo">Escolha sua zona eleitoral</strong><span id="zonas-contagem" aria-live="polite"></span></div>
@@ -31,7 +31,7 @@
           <span><i class="zone-legend__mark zone-legend__mark--unverified" aria-hidden="true"></i>Sem registro confirmado nesta base</span>
         </div>
         <div id="zona-opcoes" class="zone-options" role="group" aria-labelledby="zonas-titulo"></div>
-        <p id="zona-aviso" class="zone-disclaimer" role="status">Informe a cidade para listar as zonas conhecidas.</p>
+        <p id="zona-aviso" class="zone-disclaimer" role="status">Selecione um estado para listar as zonas com mudanças documentadas.</p>
       </div><button id="buscar" class="search-button" type="submit"><img src="assets/svg/search.svg" alt=""/><span>Buscar alteração</span></button>
       <details class="advanced-filter"><summary>Consultar uma seção específica (opcional)</summary><div class="advanced-inner"><label for="secao">Número da seção eleitoral</label><input id="secao" name="secao" inputmode="numeric" pattern="[0-9]{1,4}" placeholder="Ex.: 123" maxlength="4"/><p>Uma zona pode ter várias seções e nem todas mudaram. Informar a seção permite uma consulta mais precisa nesta base.</p></div></details>
     </form>
@@ -45,11 +45,13 @@
       <article class="not-found" id="empty-card" hidden><span class="not-found__icon"><img src="assets/svg/info.svg" alt=""/></span><div><h3 id="empty-title">Não há registro verificado nesta base</h3><p id="empty-text">Esta pesquisa não cobre todas as alterações dos quatro estados monitorados e não permite concluir que o seu local permaneceu igual. Confira a consulta individual oficial.</p></div></article>
       <aside class="info-panel"><span class="info-icon"><img src="assets/svg/info.svg" alt=""/></span><div><strong>Antes de sair para votar</strong><p>Confira seu endereço, zona e seção atualizados no e-Título ou no portal de <a href="https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/atendimento-eleitor/onde-votar" target="_blank" rel="noopener noreferrer">Autoatendimento Eleitoral do TSE ↗</a>. A busca desta página não consulta dados individuais.</p></div></aside>
       <p class="prototype-note"><span id="base-updated">Base documental parcial • Eleições 2026</span> · <a href="https://www.tse.jus.br/comunicacao/noticias/2026/Outubro/consulte-com-antecedencia-o-local-onde-voce-ira-votar-no-2o-turno" target="_blank" rel="noopener noreferrer">Orientação oficial do TSE ↗</a> · <a href="https://sig.tse.jus.br/" target="_blank" rel="noopener noreferrer">Estatísticas do TSE ↗</a></p>
-      <div class="helper-text" id="cidade-ajuda" hidden>Digite o nome completo do município, sem precisar informar CPF.</div><div class="helper-text" id="zona-ajuda" hidden>Se não souber, deixe o campo em branco: uma lista de zonas documentadas na cidade será apresentada.</div>
+      <div class="helper-text" id="cidade-ajuda" hidden>Selecione um dos municípios com alteração documentada nesta base.</div><div class="helper-text" id="zona-ajuda" hidden>Se não souber, deixe o campo em branco: uma lista de zonas documentadas na cidade será apresentada.</div>
     </section>
   </div>
 </main>
 <style>
+.city-hint{font-size:11px;color:#55718b;line-height:1.4;min-height:17px}
+#cidade:disabled{background:#f3f6fa;color:#60758d;opacity:1}
 #zona-assist[hidden]{display:none}
 #zona-assist{grid-column:1/-1;padding:16px;border:1px solid #ccddf1;border-radius:12px;background:#f6faff;display:grid;gap:12px;min-width:0}
 .zone-assist__head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
@@ -156,7 +158,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     button.addEventListener('click',()=>{
      if(onlyState){
       city.value=entry.city;
-      city.dispatchEvent(new Event('input',{bubbles:true}));
+      if(!Array.from(city.options).some(option=>option.value===entry.city))city.add(new Option(entry.city,entry.city));
+      city.value=entry.city;
+      city.dispatchEvent(new Event('change',{bubbles:true}));
      }
      zone.value=String(entry.number);
      zone.dispatchEvent(new Event('input',{bubbles:true}));
@@ -185,7 +189,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
  }
  zone.addEventListener('input',()=>{applySelection();});
- city.addEventListener('input',()=>{
+ city.addEventListener('change',()=>{
   zone.value='';zone.classList.remove('zona--mudanca');
   clearTimeout(debounce);debounce=setTimeout(refresh,240);
  });
