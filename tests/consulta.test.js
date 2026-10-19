@@ -259,6 +259,6 @@ test('aviso de site independente aparece uma vez e somente no rodapé, com acess
  assert.ok(html.indexOf('id="base-updated"')>footStart&&html.indexOf('id="base-updated"')<footEnd);
  assert.match(html,/<nav class="site-footer__references" aria-label="Fontes e consulta oficial">/);
  assert.match(html,/Consulta oficial no TSE/);
- assert.match(html,/O Onde Voto\\? é uma iniciativa independente/);
- assert.match(css,/\\.site-footer__disclaimer\\{/);
+ assert.ok(html.includes('O Onde Voto? é uma iniciativa independente'));
+ assert.ok(css.includes('.site-footer__disclaimer{'));
 });
